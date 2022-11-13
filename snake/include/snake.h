@@ -110,7 +110,10 @@ class Options :public State
 class Enemy :public Game
 {
 private:
-
+    sf::RectangleShape _enemy;
+public:
+    Enemy();
+    sf::RectangleShape GetEnemy(){return _enemy;};
 };
 //__________________________________________________________
 

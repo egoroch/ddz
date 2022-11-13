@@ -71,6 +71,8 @@ void MainMenu::pollEvent() {};
 
 void Game::render(Window& window) {
     window.GetRendWindow()->clear(sf::Color::Red);
+    Enemy rect;
+    window.GetRendWindow()->draw(rect.GetEnemy());
 }
 void Game::update() {};
 void Game::pollEvent() {};
@@ -83,7 +85,13 @@ void Options::update() {};
 void Options::pollEvent() {};
 
 
-
+Enemy::Enemy() {
+    this->_enemy.setPosition(10,10);
+    this->_enemy.setSize(sf::Vector2f(100.f,100.f));
+    this->_enemy.setFillColor(sf::Color::Cyan);
+    this->_enemy.setOutlineColor(sf::Color::Green);
+    this->_enemy.setOutlineThickness(1.f);
+}
 
 
 //_________________________________________
