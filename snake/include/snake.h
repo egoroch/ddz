@@ -11,7 +11,7 @@
 #include "SFML/Network.hpp"
 
 // created by egor 03/11/22
-class Window {
+/*class _Window {
 public:
     Window();
     Window(const std::string& title, const sf::Vector2u& size);
@@ -39,49 +39,83 @@ private:
     std::string _windowTitle;
     bool _isDone;
     bool _isFullScreen;
-};
+};*/
 //_________________________________________________________________________
-class CurrentWindow;
+class Window;
 
 class State {
-protected:
-    CurrentWindow* _currentWindow;
+private:
+    Window* _window;
+
 public :
     virtual ~State(){}
-    void setWindow(CurrentWindow* cw);
-   // virtual void Update() = 0;
-    virtual void Draw(sf::RenderWindow& window) =0;
+    void setWindow(Window* cw);
+    virtual void render(Window& window) =0;
+    virtual void update() =0;
+    virtual void pollEvent() = 0;
 
 };
 
-class CurrentWindow{
+class Window{
 private:
-    State* state;
+    State* _state;
+    sf::RenderWindow _rend_window;
+    sf::Vector2u _windowSize;
+    std::string _windowTitle;
+    bool _isDone;
+    bool _isFullScreen;
+
+    //private functions
+    void Destroy();
+    void Create();
+    void Setup(const std::string& title, const sf::Vector2u& size);
 public:
-    CurrentWindow(State* st) :state(nullptr){setState(st);}
+    Window();
+    Window(const std::string& title, const sf::Vector2u& size, State* state);
+    ~Window();
+    sf::RenderWindow* GetRendWindow();
+    bool IsFullScreen();
+    sf::Vector2u GetWindowSize();
+    void ToggleFullScreen();
+
     void setState(State* st);
-    virtual void Draw(sf::RenderWindow& window) {state->Draw(window);};
+    virtual void render(Window& window) {_state->render(window);};
+    virtual void update(){_state->update();};
+    virtual void pollEvent(){_state->pollEvent();};
 };
 
 
 class MainMenu :public State
 {
-   // void Update() override;
-    void Draw(sf::RenderWindow& window) override;
+    void render(Window& window) override;
+    void update() override;
+    void pollEvent() override;
 };
 
 class Game :public State
 {
-    //void Update() override;
-    void Draw(sf::RenderWindow& window) override;
+public:
+    void render(Window& window) override;
+    void update() override;
+    void pollEvent() override;
 };
 
 class Options :public State
 {
-    //void Update() override;
-    void Draw(sf::RenderWindow& window) override;
+    void render(Window& window) override;
+    void update() override;
+    void pollEvent() override;
+};
+
+class Enemy :public Game
+{
+private:
+
 };
 //__________________________________________________________
+
+
+//сделать классы наследующие игры и через них создавать карту, мобов
 
 
 

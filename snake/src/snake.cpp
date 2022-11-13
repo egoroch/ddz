@@ -1,18 +1,37 @@
-//
-// Created by egor on 11/3/22.
-//
+
 #include "../include/snake.h"
 
+//_________________________________________\
+// constructors and destructor
 Window::Window() {
     Setup("Snake", sf::Vector2u(1280, 720));
 }
 
-Window::Window(const std::string& title, const sf::Vector2u& size) {
+Window::Window(const std::string& title, const sf::Vector2u& size,State* state)
+{
     Setup(title, size);
+    _state = state;
+    Create();
 }
 
 Window::~Window() {
     Destroy();
+}
+
+// functions
+sf::Vector2u Window::GetWindowSize(){
+    return _windowSize;
+};
+
+void Window::Destroy() {
+     _rend_window.close();
+    delete _state;
+}
+
+void Window::ToggleFullScreen() {
+    _isFullScreen = !_isFullScreen;
+    Destroy();
+    Create();
 }
 
 void Window::Setup(const std::string &title, const sf::Vector2u &size) {
@@ -22,71 +41,48 @@ void Window::Setup(const std::string &title, const sf::Vector2u &size) {
     _isDone = false;
     Create();
 }
+sf::RenderWindow* Window::GetRendWindow(){
+    return &_rend_window;
+}
 
 void Window::Create() {
     auto style = (_isFullScreen ? sf::Style::Fullscreen : sf::Style::Default);
-    _window.create({_windowSize.x, _windowSize.y, 32}, _windowTitle, style);
+    _rend_window.create({_windowSize.x, _windowSize.y, 32}, _windowTitle, style);
 }
 
-void Window::Destroy() {
-    _window.close();
+void State::setWindow(Window *cw) {
+    _window = cw;
 }
-
-void Window::Update() {
-    sf::Event event;
-    while(_window.pollEvent(event)) {
-        if(event.type == sf::Event::Closed || (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)){
-            _isDone = true;
-        } else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F5) {
-            ToggleFullScreen();
-        }
-    }
-}
-
-void Window::ToggleFullScreen() {
-    _isFullScreen = !_isFullScreen;
-    Destroy();
-    Create();
-}
-
-void Window::BeginDraw() { _window.clear(sf::Color::Black); }
-
-void Window::EndDraw() { _window.display(); }
-
-bool Window::IsDone() { return _isDone; }
-
 bool Window::IsFullScreen() { return _isFullScreen; }
 
-sf::Vector2u Window::GetWindowSize() { return _windowSize; }
 
-void Window::Draw(sf::Drawable& _drawable) {
-    _window.draw(_drawable);
+void Window::setState(State* st){
+    if(_state != nullptr) delete _state;
+    _state =st;
+    _state->setWindow(this);
 }
 
-
-//_________________________________________
-
-void State::setWindow(CurrentWindow *cw) {
-    _currentWindow = cw;
+void MainMenu::render(Window& window) {
+    window.GetRendWindow()->clear(sf::Color::Black);
 }
+void MainMenu::update() {};
+void MainMenu::pollEvent() {};
 
-void CurrentWindow::setState(State* st){
-    if(state != nullptr) delete state;
-    state =st;
-    state->setWindow(this);
-}
 
-void MainMenu::Draw(sf::RenderWindow& window) {
-    window.clear(sf::Color::Black);
+void Game::render(Window& window) {
+    window.GetRendWindow()->clear(sf::Color::Red);
 }
+void Game::update() {};
+void Game::pollEvent() {};
 
-void Game::Draw(sf::RenderWindow& window) {
-    window.clear(sf::Color::Red);
-}
 
-void Options::Draw(sf::RenderWindow& window) {
-    window.clear(sf::Color::Blue);
+void Options::render(Window& window) {
+    window.GetRendWindow()->clear(sf::Color::Blue);
 }
+void Options::update() {};
+void Options::pollEvent() {};
+
+
 
 
 

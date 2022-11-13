@@ -20,43 +20,44 @@ int main(){
         menu.EndDraw();
         //menu.handleInput();
     }*/
-   sf::RenderWindow window(sf::VideoMode(640,480),"Snake",sf::Style::Titlebar | sf::Style::Close);
-   CurrentWindow* current = new CurrentWindow(new MainMenu);
+   sf::Vector2u size(1280,700);
+   std::string title = "snake";
+   Window window(title,size, new MainMenu);
    sf::Event ev;
-   while(window.isOpen())
+   while(window.GetRendWindow()->isOpen())
    {
-       while(window.pollEvent(ev))
+       while(window.GetRendWindow()->pollEvent(ev))
        {
            switch(ev.type)
            {
                case sf::Event::Closed:
-                   window.close();
+                   window.GetRendWindow()->close();
                    break;
                case sf::Event::KeyPressed:
                    if(ev.key.code == sf::Keyboard::Escape)
                        {
-                           window.close();
+                           window.GetRendWindow()->close();
                            break;
                        }
                     if(ev.key.code == sf::Keyboard::Num0)
                        {
-                           current->setState(new MainMenu);
+                           window.setState(new MainMenu);
                            break;
                        }
                    if(ev.key.code == sf::Keyboard::Num1)
                        {
-                           current->setState(new Game);
+                           window.setState(new Game);
                            break;
                        }
                    if(ev.key.code == sf::Keyboard::Num2)
                        {
-                           current->setState(new Options);
+                           window.setState(new Options);
                            break;
                        }
            }
        }
-       current->Draw(window);
-       window.display();
+       window.render(window);
+       window.GetRendWindow()->display();
 
    }
 
