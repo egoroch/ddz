@@ -62,6 +62,35 @@ sf::Vector2u Window::GetWindowSize() { return _windowSize; }
 void Window::Draw(sf::Drawable& _drawable) {
     _window.draw(_drawable);
 }
+
+
+//_________________________________________
+
+void State::setWindow(CurrentWindow *cw) {
+    _currentWindow = cw;
+}
+
+void CurrentWindow::setState(State* st){
+    if(state != nullptr) delete state;
+    state =st;
+    state->setWindow(this);
+}
+
+void MainMenu::Draw(sf::RenderWindow& window) {
+    window.clear(sf::Color::Black);
+}
+
+void Game::Draw(sf::RenderWindow& window) {
+    window.clear(sf::Color::Red);
+}
+
+void Options::Draw(sf::RenderWindow& window) {
+    window.clear(sf::Color::Blue);
+}
+
+
+
+//_________________________________________
 /*
 MainMenu::MainMenu()  {
     MainMenu::SetupButtons();

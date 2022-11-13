@@ -6,6 +6,9 @@
 #define DDZ_SNAKE_H
 #include <iostream>
 #include "SFML/Graphics.hpp"
+#include "SFML/Window.hpp"
+#include "SFML/System.hpp"
+#include "SFML/Network.hpp"
 
 // created by egor 03/11/22
 class Window {
@@ -37,6 +40,53 @@ private:
     bool _isDone;
     bool _isFullScreen;
 };
+//_________________________________________________________________________
+class CurrentWindow;
+
+class State {
+protected:
+    CurrentWindow* _currentWindow;
+public :
+    virtual ~State(){}
+    void setWindow(CurrentWindow* cw);
+   // virtual void Update() = 0;
+    virtual void Draw(sf::RenderWindow& window) =0;
+
+};
+
+class CurrentWindow{
+private:
+    State* state;
+public:
+    CurrentWindow(State* st) :state(nullptr){setState(st);}
+    void setState(State* st);
+    virtual void Draw(sf::RenderWindow& window) {state->Draw(window);};
+};
+
+
+class MainMenu :public State
+{
+   // void Update() override;
+    void Draw(sf::RenderWindow& window) override;
+};
+
+class Game :public State
+{
+    //void Update() override;
+    void Draw(sf::RenderWindow& window) override;
+};
+
+class Options :public State
+{
+    //void Update() override;
+    void Draw(sf::RenderWindow& window) override;
+};
+//__________________________________________________________
+
+
+
+
+
 
 /*
 class BaseWindowState {
