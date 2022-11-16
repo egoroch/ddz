@@ -20,7 +20,7 @@ int main(){
         menu.EndDraw();
         //menu.handleInput();
     }*/
-   sf::Vector2u size(1280,700);
+   sf::Vector2f size(1280,700);
    std::string title = "snake";
    Window window(title,size, new MainMenu);
    sf::Event ev;
