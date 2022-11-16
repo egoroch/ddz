@@ -64,9 +64,20 @@ void Window::setState(State* st){
 
 void MainMenu::render(Window& window) {
     window.GetRendWindow()->clear(sf::Color::Black);
+    sf::Font font;
+    if(!font.loadFromFile("/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf")){
+        return;
+    }
+    sf::Text title("The Best Snake", font, 44);
+    title.setFillColor(sf::Color::White);
+    sf::FloatRect titleRect = title.getLocalBounds();
+    title.setOrigin(titleRect.left + titleRect.width/2.0f, titleRect.top + titleRect.height/2.0f);
+    title.setPosition(window.GetWindowSize().x/2, window.GetWindowSize().y/6);
+    window.GetRendWindow()->draw(title);
+
+
 }
 void MainMenu::update() {};
-void MainMenu::pollEvent() {};
 
 
 void Game::render(Window& window) {
@@ -75,14 +86,12 @@ void Game::render(Window& window) {
     window.GetRendWindow()->draw(rect.GetEnemy());
 }
 void Game::update() {};
-void Game::pollEvent() {};
 
 
 void Options::render(Window& window) {
     window.GetRendWindow()->clear(sf::Color::Blue);
 }
 void Options::update() {};
-void Options::pollEvent() {};
 
 
 Enemy::Enemy() {

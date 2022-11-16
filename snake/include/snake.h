@@ -52,7 +52,6 @@ public :
     void setWindow(Window* cw);
     virtual void render(Window& window) =0;
     virtual void update() =0;
-    virtual void pollEvent() = 0;
 
 };
 
@@ -81,7 +80,6 @@ public:
     void setState(State* st);
     virtual void render(Window& window) {_state->render(window);};
     virtual void update(){_state->update();};
-    virtual void pollEvent(){_state->pollEvent();};
 };
 
 
@@ -89,7 +87,6 @@ class MainMenu :public State
 {
     void render(Window& window) override;
     void update() override;
-    void pollEvent() override;
 };
 
 class Game :public State
@@ -97,14 +94,12 @@ class Game :public State
 public:
     void render(Window& window) override;
     void update() override;
-    void pollEvent() override;
 };
 
 class Options :public State
 {
     void render(Window& window) override;
     void update() override;
-    void pollEvent() override;
 };
 
 class Enemy :public Game
