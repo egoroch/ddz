@@ -3,14 +3,16 @@
 
 int main() {
 
-    sf::Vector2u size(1280, 700);
+    sf::Vector2u size(1280, 640);
     std::string title = "snake";
-    Window window(title, size, new Game(&window));
-    sf::Event ev;
+    Window window(title, size, nullptr);
+    window.setState(new Game(&window));
+    sf::Event event;
+    window.GetRendWindow()->setFramerateLimit(30);
     while (window.GetRendWindow()->isOpen()) {
-        window.update(window);
+             window.update(window,event);
+
         window.render(window);
-        window.GetRendWindow()->display();
 
     }
 

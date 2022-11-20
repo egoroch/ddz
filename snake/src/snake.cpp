@@ -36,8 +36,6 @@ void Window::Setup(const std::string &title, const sf::Vector2u &size) {
     _windowTitle = title;
     _windowSize = size;
     _isFullScreen = false;
-    _isDone = false;
-    this->GetRendWindow()->setFramerateLimit(60);
     Create();
 }
 
@@ -67,7 +65,7 @@ void MainMenu::render(Window &window) {
     //window.GetRendWindow()->clear(sf::Color::Black);
 }
 
-void MainMenu::update(Window &window) {
+void MainMenu::update(Window &window, sf::Event ev) {
     window.GetRendWindow()->clear(sf::Color::Magenta);
     //render stuff
     sf::Event e;
@@ -79,56 +77,10 @@ void MainMenu::update(Window &window) {
     }
 };
 
-
-Game::Game() { _window = nullptr; }
-
-Game::Game(Window *window) {
-    _window = window;
-    initPlayer();
-}
-
-Game::~Game() {
-    delete _player;
-}
-
-void Game::render(Window &window) {
-    window.GetRendWindow()->clear();
-    _player->move();
-    _player->render(*(_window->GetRendWindow()));
-}
-
-//_________________________________
-void Game::update(Window &window) {
-    sf::Event event;
-    while (window.GetRendWindow()->pollEvent(event)) {
-        if (event.Event::type == sf::Event::Closed)
-            window.GetRendWindow()->close();
-        if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::Escape)
-            window.GetRendWindow()->close();
-
-        //move player
-        if (sf::Keyboard::isKeyPressed((sf::Keyboard::Right)))
-            _player->changeDir(sf::Vector2f(1.f, 0));
-        if (sf::Keyboard::isKeyPressed((sf::Keyboard::Left)))
-            _player->changeDir(sf::Vector2f(-1, 0));
-        if (sf::Keyboard::isKeyPressed((sf::Keyboard::Up)))
-            _player->changeDir(sf::Vector2f(0, -1));
-        if (sf::Keyboard::isKeyPressed((sf::Keyboard::Down)))
-            _player->changeDir(sf::Vector2f(0, 1));
-
-    };
-};
-
-
-void Game::initPlayer() {
-    _player = new Player();
-}
-
-
 void Options::render(Window &window) {
 }
 
-void Options::update(Window &window) {
+void Options::update(Window &window, sf::Event ev) {
     window.GetRendWindow()->clear(sf::Color::Cyan);
     //render stuff
     sf::Event e;
@@ -141,38 +93,257 @@ void Options::update(Window &window) {
     };
 }
 
-Player::Player() {
-    this->initTexture();
-    this->initSprite();
-    _direct = sf::Vector2f(1, 0);
+Game::Game() {
+    _window = nullptr;
+    _snake = Snake(0);
+    sf::Vector2u size(0, 0);
+    _world = size;
+
 }
 
-Player::~Player() noexcept {}
+Game::Game(Window *window) {
+    _window = window;
+    _world = World(_window->GetWindowSize());
+    _snake = Snake(_world.GetBlockSize());
 
-void Player::update() {}
-
-void Player::render(sf::RenderTarget &target) {
-    target.draw(this->_sprite);
 }
 
-void Player::initTexture() {
-    if (!_texture.loadFromFile("Textures/snake2.png")) {
-        std::cout << "error with load snake.png" << '\n';
+Game::~Game() {
+    //delete _player;
+}
+
+void Game::render(Window &window) {
+    window.GetRendWindow()->clear();
+    _world.Render(*_window->GetRendWindow());
+    _snake.Render(*_window->GetRendWindow());
+    _window->GetRendWindow()->display();
+    this->RestartClock();
+    // _player->move();
+    //_player->render(*(_window->GetRendWindow()));
+}
+
+void Game::update(Window &window, sf::Event ev) {
+    sf::Event event;
+    while (window.GetRendWindow()->pollEvent(event)) {
+        if (event.Event::type == sf::Event::Closed)
+            _window->GetRendWindow()->close();
+        if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::Escape)
+            _window->GetRendWindow()->close();
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)
+            && _snake.GetDirection() != Direction::Down) {
+            _snake.SetDirection(Direction::Up);
+        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)
+                   && _snake.GetDirection() != Direction::Up) {
+            _snake.SetDirection(Direction::Down);
+        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)
+                   && _snake.GetDirection() != Direction::Right) {
+            _snake.SetDirection(Direction::Left);
+        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)
+                   && _snake.GetDirection() != Direction::Left) {
+            _snake.SetDirection(Direction::Right);
+        }
+    };
+    float timestep = 1.0f / _snake.GetSpeed();
+
+    if (_elapsed.asSeconds() >= timestep) {
+        _snake.Tick();
+        _world.Update(_snake,event);
+        _elapsed -= sf::seconds(timestep);
+        if (_snake.HasLost()) {
+            _snake.Reset();
+        }
+  }
+    this->RestartClock();
+};
+
+
+Snake::Snake(int l_blockSize) {
+    _size = l_blockSize;
+    _bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
+    Reset();
+}
+
+Snake::~Snake() {}
+
+void Snake::Reset() {
+    _snakeBody.clear();
+
+    _snakeBody.push_back(SnakeSegment(5, 7));
+    _snakeBody.push_back(SnakeSegment(5, 6));
+    _snakeBody.push_back(SnakeSegment(5, 5));
+
+    SetDirection(Direction::None);
+    _speed = 15;
+    _score = 0;
+    _lost = false;
+}
+
+void Snake::SetDirection(Direction l_dir) { _dir = l_dir; }
+
+Direction Snake::GetDirection() { return _dir; }
+
+int Snake::GetSpeed() { return _speed; }
+
+sf::Vector2i Snake::GetPosition() {
+    return (!_snakeBody.empty() ? _snakeBody.front().position : sf::Vector2i(1, 1));
+}
+
+void Snake::SetPosition(sf::Vector2i l_pos) {
+    _snakeBody.front().position.x = l_pos.x;
+    _snakeBody.front().position.y = l_pos.y;
+}
+
+int Snake::GetScore() { return _score; }
+
+void Snake::IncreaseScore() { _score += 10; }
+
+bool Snake::HasLost() { return _lost; }
+
+void Snake::Lose() { _lost = true; }
+
+void Snake::Extend() {
+    if (_snakeBody.empty()) { return; }
+    SnakeSegment &tail_head =
+            _snakeBody[_snakeBody.size() - 1];
+    if (_snakeBody.size() > 1) {
+        SnakeSegment &tail_bone =
+                _snakeBody[_snakeBody.size() - 2];
+        if (tail_head.position.x == tail_bone.position.x) {
+            if (tail_head.position.y > tail_bone.position.y) {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x, tail_head.position.y + 1));
+            } else {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x, tail_head.position.y - 1));
+            }
+        } else if (tail_head.position.y == tail_bone.position.y) {
+            if (tail_head.position.x > tail_bone.position.x) {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x + 1, tail_head.position.y));
+            } else {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x - 1, tail_head.position.y));
+            }
+        }
+    } else {
+        if (_dir == Direction::Up) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x, tail_head.position.y + 1));
+        } else if (_dir == Direction::Down) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x, tail_head.position.y - 1));
+        } else if (_dir == Direction::Left) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x + 1, tail_head.position.y));
+        } else if (_dir == Direction::Right) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x - 1, tail_head.position.y));
+        }
+    }
+}
+
+void Snake::Tick() {
+    if (_snakeBody.empty()) { return; }
+    if (_dir == Direction::None) { return; }
+    Move();
+    CheckCollision();
+}
+
+void Snake::Move() {
+    for (int i = _snakeBody.size() - 1; i > 0; --i) {
+        _snakeBody[i].position = _snakeBody[i - 1].position;
+    }
+
+    if (_dir == Direction::Left) {
+        --_snakeBody[0].position.x;
+    } else if (_dir == Direction::Right) {
+        ++_snakeBody[0].position.x;
+    } else if (_dir == Direction::Up) {
+        --_snakeBody[0].position.y;
+    } else if (_dir == Direction::Down) {
+        ++_snakeBody[0].position.y;
     }
 
 }
 
-void Player::initSprite() {
-    sf::Texture::bind(&_texture);
-    _sprite.setTexture(_texture);
-
-    _sprite.scale(0.2, 0.2);
+void Snake::CheckCollision() {
+    if (_snakeBody.size() < 5) { return; }
+    SnakeSegment &head = _snakeBody.front();
+    for (auto itr = _snakeBody.begin() + 1; itr != _snakeBody.end(); ++itr) {
+        if (itr->position == head.position) {
+            Lose();
+            break;
+        }
+    }
 }
 
-void Player::changeDir(sf::Vector2f dir) {
-    _direct = dir;
+void Snake::Render(sf::RenderWindow &l_window) {
+    if (_snakeBody.empty()) { return; }
+
+    auto head = _snakeBody.begin();
+    _bodyRect.setFillColor(sf::Color::Yellow);
+    _bodyRect.setPosition(head->position.x * _size, head->position.y * _size);
+    l_window.draw(_bodyRect);
+
+    _bodyRect.setFillColor(sf::Color::Green);
+    for (auto itr = _snakeBody.begin() + 1; itr != _snakeBody.end(); ++itr) {
+        _bodyRect.setPosition(itr->position.x * _size, itr->position.y * _size);
+        l_window.draw(_bodyRect);
+    }
 }
 
-void Player::move() {
-    _sprite.move(_direct.x * _movementSpeed, _direct.y * _movementSpeed);
+World::World(const sf::Vector2u &l_windSize) {
+    _blockSize = 16;
+
+    _windowSize = l_windSize;
+    RespawnApple();
+    _appleShape.setFillColor(sf::Color::Red);
+    _appleShape.setRadius(_blockSize / 2);
 }
+
+World::~World() {}
+
+void World::RespawnApple() {
+    int maxX = (_windowSize.x / _blockSize);
+    int maxY = (_windowSize.y / _blockSize);
+    _item = sf::Vector2i(
+            rand() % maxX, rand() % maxY);
+    _appleShape.setPosition(
+            _item.x * _blockSize,
+            _item.y * _blockSize);
+}
+
+void World::Update(Snake &l_player, sf::Event ev) {
+    if (l_player.GetPosition() == _item) {
+        l_player.Extend();
+        l_player.IncreaseScore();
+        RespawnApple();
+    }
+    int gridSize_x = _windowSize.x / _blockSize;
+    int gridSize_y = _windowSize.y / _blockSize;
+
+    if (l_player.GetPosition().x == -1) {
+        l_player.SetPosition(sf::Vector2i( gridSize_x-1, l_player.GetPosition().y));
+    }
+    if (l_player.GetPosition().y == -1) {
+        l_player.SetPosition(sf::Vector2i(l_player.GetPosition().x, gridSize_y-1));
+    }
+    if (l_player.GetPosition().y == gridSize_y) {
+        l_player.SetPosition(sf::Vector2i(l_player.GetPosition().x, 0));
+    }
+    if (l_player.GetPosition().x == gridSize_x) {
+        l_player.SetPosition(sf::Vector2i(0, l_player.GetPosition().y));
+    }
+}
+
+void World::Render(sf::RenderWindow &window) {
+    window.draw(_appleShape);
+}
+
+int World::GetBlockSize() { return _blockSize; }
+
+sf::Time Game::GetElapsed() { return _elapsed; }
+
+void Game::RestartClock() { _elapsed += _clock.restart(); }
+
+//рахобраться с временем
