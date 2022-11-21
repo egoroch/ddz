@@ -1,6 +1,3 @@
-//
-// Created by egor on 10/30/22.
-//
 
 #ifndef DDZ_SNAKE_H
 #define DDZ_SNAKE_H
@@ -9,39 +6,9 @@
 #include "SFML/Graphics.hpp"
 #include "SFML/Window.hpp"
 #include "SFML/System.hpp"
-#include "SFML/Network.hpp"
+#include "ctime"
+#include "iostream"
 
-// created by egor 03/11/22
-/*class _Window {
-public:
-    Window();
-    Window(const std::string& title, const sf::Vector2u& size);
-    ~Window();
-
-    void BeginDraw();
-    void EndDraw();
-
-    void Update();
-
-    bool IsDone();
-    bool IsFullScreen();
-    sf::Vector2u GetWindowSize();
-
-    void ToggleFullScreen();
-
-    void Draw(sf::Drawable& drawable);
-private:
-    void Setup(const std::string& title, const sf::Vector2u& size);
-    void Destroy();
-    void Create();
-
-    sf::RenderWindow _window;
-    sf::Vector2u _windowSize;
-    std::string _windowTitle;
-    bool _isDone;
-    bool _isFullScreen;
-};*/
-//_________________________________________________________________________
 class Window;
 
 class State {
@@ -55,7 +22,9 @@ public :
 
     virtual void render(Window &window) = 0;
 
-    virtual void update() = 0;
+    virtual void update(Window &window , sf::Event ev) = 0;
+
+
 
 };
 
@@ -65,7 +34,6 @@ private:
     sf::RenderWindow _rend_window;
     sf::Vector2f _windowSize;
     std::string _windowTitle;
-    bool _isDone;
     bool _isFullScreen;
 
     //private functions
@@ -73,12 +41,14 @@ private:
 
     void Create();
 
-    void Setup(const std::string &title, const sf::Vector2f &size);
+    void Setup(const std::string &title, const sf::Vector2u &size);
+
 
 public:
     Window();
 
-    Window(const std::string &title, const sf::Vector2f &size, State *state);
+    Window(const std::string &title, const sf::Vector2u &size, State *state);
+
 
     ~Window();
 
@@ -86,7 +56,9 @@ public:
 
     bool IsFullScreen();
 
-    sf::Vector2f GetWindowSize();
+
+    sf::Vector2u GetWindowSize();
+
 
     void ToggleFullScreen();
 
@@ -94,7 +66,10 @@ public:
 
     virtual void render(Window &window) { _state->render(window); };
 
-    virtual void update() { _state->update(); };
+
+    virtual void update(Window &window, sf::Event ev) { _state->update(window,ev); };
+
+
 };
 
 class Button {
@@ -130,117 +105,136 @@ public:
 
     void render(Window &window) override;
 
-    void update() override;
+
+
+
+struct SnakeSegment{
+    SnakeSegment(int x,int y) : position(x,y){}
+    sf::Vector2i position;
+};
+
+using SnakeContainer = std::vector<SnakeSegment>;
+
+enum class Direction {None,Up,Down,Left,Right};
+
+class Snake{
+public:
+    Snake(int l_blockSize);
+    Snake() = default;
+    ~Snake();
+
+    //methods
+    void SetDirection(Direction l_dir);
+    Direction GetDirection();
+    int GetSpeed();
+    sf::Vector2i GetPosition();
+    void SetPosition(sf::Vector2i l_pos);
+    int GetScore();
+    void IncreaseScore();
+    bool HasLost();
+    Direction GetPhysicalDirection();
+
+    void Lose();
+
+    void Extend();
+    void Reset();
+
+    void Move();
+    void Tick();
+    void Render(sf::RenderWindow& l_window);
 private:
-    Window* _window;
+    void CheckCollision();
+
+    SnakeContainer _snakeBody;
+    int _size;
+    Direction _dir;
+    int _speed;
+    int _score;
+    bool _lost;
+    sf::RectangleShape _bodyRect; // Shape used in rendering
+};
+
+class World{
+public:
+    World(const sf::Vector2u &l_windSize);
+    World() = default;
+    ~World();
+
+    int GetBlockSize();
+
+    void RespawnApple();
+
+    void Update(Snake& l_player, sf::Event ev);
+    void Render(sf::RenderWindow& window);
+
+private:
+    sf::Vector2u _windowSize;
+    sf::Vector2i _item;
+    int _blockSize;
+
+    sf::CircleShape _appleShape;
+
+};
+
+using MessageContainer = std::vector<std::string>;
+class Textbox{
+public:
+    Textbox();
+    Textbox(int l_visible , int l_charSize, int l_width, sf::Vector2f l_screenPos);
+    ~Textbox();
+
+    void Setup(int l_visible, int l_charSize,int l_width,sf::Vector2f l_screenPos);
+
+    void Add(std::string l_message);
+    void Clear();
+
+    void Render(sf::RenderWindow& l_wind);
+private:
+    MessageContainer _messages;
+    int _numVisible;
+
+    sf::RectangleShape _backdrop;
+    sf::Font _font;
+    sf::Text _content;
 };
 
 class Game : public State {
+private:
+    Window *_window;
+    World _world;
+    Snake _snake;
+    sf::Clock _clock;
+    sf::Time _elapsed;
+    Textbox _text;
+
+
 public:
+    Game();
+
+    explicit Game(Window *window);
+    sf::Time GetElapsed();
+    void RestartClock();
+    ~Game();
+    void update(Window &window,sf::Event ev) override;
     void render(Window &window) override;
 
-    void update() override;
 };
 
 class Options : public State {
-public:
-    Options(Window* window): _window(window){};
     void render(Window &window) override;
 
-    void update() override;
-private:
-    Window* _window;
+    void update(Window &window, sf::Event ev) override;
+
 };
 
-class Enemy : public Game {
-private:
-    sf::RectangleShape _enemy;
-public:
-    Enemy();
+class MainMenu : public State {
+    void render(Window &window) override;
 
-    sf::RectangleShape GetEnemy() { return _enemy; };
+    void update(Window &window, sf::Event ev) override;
+
 };
-//__________________________________________________________
 
 
-//сделать классы наследующие игры и через них создавать карту, мобов
-
-
-
-
-
-
-/*
-class BaseWindowState {
-public:
-    ~BaseWindowState() {};
-    virtual void handleInput(Window& window) {}
-    virtual void update(Window& window) {}
-};*/
-/*
-class MainMenu{
-public:
-    MainMenu();
-    ~MainMenu() = default;
-
-    void update();
-    void Draw();
-
-    bool IsDone() { return _window.IsDone(); };
-
-
-private:
-    Window _window;
-    void SetupButtons();
-
-    sf::Text _text;
-    sf::Vector2f _buttonSize;
-    sf::Vector2f _buttonPosition;
-    sf::Text _labels[3];
-    sf::RectangleShape _rects[3];
-};
-*/
-/*
-class CurrentWindow: public BaseWindowState{
-public:
-    virtual void handleInput() {
-        _state->handleInput(_window);
-        BaseWindowState* state = _state;
-        if(state != NULL) {
-            delete _state;
-            _state = state;
-        }
-
-    }
-    virtual void update() {
-        _state->update(_window);
-    }
-
-    bool IsDone() { return _window.IsDone(); };
-private:
-    Window _window;
-    BaseWindowState* _state;
-};
-*/
-
-/*class MainMenu{
-public:
-    MainMenu();
-    ~MainMenu();
-
-    //void HandleInput();
-    void Update();
-    void Render();
-    Window& GetWindow();
-
-private:
-    void SetupButtons();
-    void SetupGraphics();
-
-    Window _window;
-    sf::RectangleShape _buttonStart;
-    sf::RectangleShape _buttonSettings;
-};*/
 
 
 

@@ -1,13 +1,14 @@
 
 #include "../include/snake.h"
 
-//_________________________________________\
 // constructors and destructor
 Window::Window() {
     Setup("Snake", sf::Vector2f(1280, 720));
 }
 
-Window::Window(const std::string &title, const sf::Vector2f &size, State *state) {
+
+Window::Window(const std::string &title, const sf::Vector2u &size, State *state) {
+
     Setup(title, size);
     _state = state;
     Create();
@@ -18,7 +19,8 @@ Window::~Window() {
 }
 
 // functions
-sf::Vector2f Window::GetWindowSize() {
+sf::Vector2u Window::GetWindowSize() {
+
     return _windowSize;
 };
 
@@ -37,7 +39,6 @@ void Window::Setup(const std::string &title, const sf::Vector2f &size) {
     _windowTitle = title;
     _windowSize = size;
     _isFullScreen = false;
-    _isDone = false;
     Create();
 }
 
@@ -65,6 +66,7 @@ void Window::setState(State *st) {
 }
 
 void MainMenu::render(Window &window) {
+
     window.GetRendWindow()->clear(sf::Color::Black);
     sf::Font font;
     if (!font.loadFromFile("/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf")) {
@@ -126,167 +128,318 @@ void MainMenu::update() {
 };
 
 
+Game::Game() {
+    _window = nullptr;
+    _snake = Snake(0);
+    sf::Vector2u size(0, 0);
+    _world = size;
+    _text.Setup(1,30,350,sf::Vector2f(225,0));
+    _text.Add("Seeded random number generator with: " + std::to_string(time(NULL)));
+}
+
+Game::Game(Window *window) {
+    _window = window;
+    _world = World(_window->GetWindowSize());
+    _snake = Snake(_world.GetBlockSize());
+    _text.Setup(2,14,300,sf::Vector2f(225,0));
+}
+
+Game::~Game() {
+    //delete _player;
+}
+
 void Game::render(Window &window) {
-    window.GetRendWindow()->clear(sf::Color::Red);
-    Enemy rect;
-    window.GetRendWindow()->draw(rect.GetEnemy());
+    window.GetRendWindow()->clear();
+    _world.Render(*_window->GetRendWindow());
+    _snake.Render(*_window->GetRendWindow());
+    _text.Add(std::to_string(_snake.GetScore()));
+    _text.Render(*_window->GetRendWindow());
+    _window->GetRendWindow()->display();
+    this->RestartClock();
+    // _player->move();
+    //_player->render(*(_window->GetRendWindow()));
 }
 
-void Game::update() {
-
-};
-
-
-void Options::render(Window &window) {
-    window.GetRendWindow()->clear(sf::Color::Blue);
-}
-
-void Options::update() {
+void Game::update(Window &window, sf::Event ev) {
     sf::Event event;
-    while (_window->GetRendWindow()->pollEvent(event)) {
-        if(event.type == sf::Event::Closed){
+    while (window.GetRendWindow()->pollEvent(event)) {
+        if (event.Event::type == sf::Event::Closed)
             _window->GetRendWindow()->close();
-            break;
-        }
-        if (event.key.code == sf::Keyboard::Escape) {
+        if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::Escape)
             _window->GetRendWindow()->close();
-            break;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)
+            && _snake.GetPhysicalDirection() != Direction::Down) {
+            _snake.SetDirection(Direction::Up);
+        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)
+                   && _snake.GetPhysicalDirection() != Direction::Up) {
+            _snake.SetDirection(Direction::Down);
+        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)
+                   && _snake.GetPhysicalDirection() != Direction::Right) {
+            _snake.SetDirection(Direction::Left);
+        } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)
+                   && _snake.GetPhysicalDirection() != Direction::Left) {
+            _snake.SetDirection(Direction::Right);
         }
-        if (event.key.code == sf::Keyboard::Num0) {
-            _window->setState(new MainMenu(_window));
-            break;
+    };
+    float timestep = 1.0f / _snake.GetSpeed();
+
+    if (_elapsed.asSeconds() >= timestep) {
+        _snake.Tick();
+        _world.Update(_snake,event);
+        _elapsed -= sf::seconds(timestep);
+        if (_snake.HasLost()) {
+            _snake.Reset();
         }
-        /*if (event.key.code == sf::Keyboard::Num1) {
-            _window->setState(new Game);
-        }*/
-        if (event.key.code == sf::Keyboard::Num2) {
-            _window->setState(new Options(_window));
-            break;
-        }
-    }
+  }
+    this->RestartClock();
 };
 
 
-Enemy::Enemy() {
-    this->_enemy.setPosition(10, 10);
-    this->_enemy.setSize(sf::Vector2f(100.f, 100.f));
-    this->_enemy.setFillColor(sf::Color::Cyan);
-    this->_enemy.setOutlineColor(sf::Color::Green);
-    this->_enemy.setOutlineThickness(1.f);
+Snake::Snake(int l_blockSize) {
+    _size = l_blockSize;
+    _bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
+    Reset();
+
 }
 
+Snake::~Snake() {}
 
-//_________________________________________
-/*
-MainMenu::MainMenu()  {
-    MainMenu::SetupButtons();
+void Snake::Reset() {
+    _snakeBody.clear();
+
+    _snakeBody.push_back(SnakeSegment(5, 7));
+    _snakeBody.push_back(SnakeSegment(5, 6));
+    _snakeBody.push_back(SnakeSegment(5, 5));
+
+    SetDirection(Direction::None);
+    _speed = 15;
+    _score = 0;
+    _lost = false;
 }
 
-void MainMenu::SetupButtons() {
-    sf::Font font;
-    font.loadFromFile("/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf");
-    _text.setFont(font);
-    _text.setCharacterSize(18);
-    _text.setString("MENU:");
+void Snake::SetDirection(Direction l_dir) { _dir = l_dir; }
 
-    sf::FloatRect textRect = _text.getGlobalBounds();
-    _text.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
-    _text.setPosition(400,100);
+Direction Snake::GetDirection() { return _dir; }
 
-    _buttonSize = sf::Vector2f(300.0f, 32.0f);
-    _buttonPosition = sf::Vector2f(400, 200);
+int Snake::GetSpeed() { return _speed; }
 
-    std::string str[3];
-    str[0] = "PLAY";
-    str[1] = "CREDITS";
-    str[2] = "EXIT";
+sf::Vector2i Snake::GetPosition() {
+    return (!_snakeBody.empty() ? _snakeBody.front().position : sf::Vector2i(1, 1));
+}
 
-    for(int i = 0; i < 3; ++i) {
-        sf::Vector2f buttonPosition(_buttonPosition.x,_buttonPosition.y +
-                                                      (i * (_buttonSize.y)));
-        _rects[i].setSize(_buttonSize);
-        _rects[i].setFillColor(sf::Color::Red);
-        _rects[i].setOrigin(_buttonSize.x / 2.0f,
-                            _buttonSize.y / 2.0f);
-        _rects[i].setPosition(buttonPosition);
-        _labels[i].setFont(font);
-        _labels[i].setString(sf::String(str[i]));
-        _labels[i].setCharacterSize(12);
-        sf::FloatRect rect = _labels[i].getLocalBounds();
-        _labels[i].setOrigin(rect.left + rect.width / 2.0f,
-                             rect.top + rect.height / 2.0f);
-        _labels[i].setPosition(buttonPosition);
+void Snake::SetPosition(sf::Vector2i l_pos) {
+    _snakeBody.front().position.x = l_pos.x;
+    _snakeBody.front().position.y = l_pos.y;
+}
+
+int Snake::GetScore() { return _score; }
+
+void Snake::IncreaseScore() { _score += 10; }
+
+bool Snake::HasLost() { return _lost; }
+
+void Snake::Lose() { _lost = true; }
+
+void Snake::Extend() {
+    if (_snakeBody.empty()) { return; }
+    SnakeSegment &tail_head =
+            _snakeBody[_snakeBody.size() - 1];
+    if (_snakeBody.size() > 1) {
+        SnakeSegment &tail_bone =
+                _snakeBody[_snakeBody.size() - 2];
+        if (tail_head.position.x == tail_bone.position.x) {
+            if (tail_head.position.y > tail_bone.position.y) {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x, tail_head.position.y + 1));
+            } else {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x, tail_head.position.y - 1));
+            }
+        } else if (tail_head.position.y == tail_bone.position.y) {
+            if (tail_head.position.x > tail_bone.position.x) {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x + 1, tail_head.position.y));
+            } else {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x - 1, tail_head.position.y));
+            }
+        }
+    } else {
+        if (_dir == Direction::Up) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x, tail_head.position.y + 1));
+        } else if (_dir == Direction::Down) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x, tail_head.position.y - 1));
+        } else if (_dir == Direction::Left) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x + 1, tail_head.position.y));
+        } else if (_dir == Direction::Right) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x - 1, tail_head.position.y));
+        }
     }
 }
 
-void MainMenu::update() {
-    _window.Update();
+void Snake::Tick() {
+    if (_snakeBody.empty()) { return; }
+    if (_dir == Direction::None) { return; }
+    Move();
+    CheckCollision();
 }
 
-void MainMenu::Draw(){
-    _window.BeginDraw();
-    _window.Draw(_text);
-    _window.Draw(_rects[0]);
-    _window.Draw(_labels[0]);
-    _window.Draw(_rects[1]);
-    _window.Draw(_labels[1]);
-    _window.Draw(_rects[2]);
-    _window.Draw(_labels[2]);
-    _window.EndDraw();
-}
-MainMenu::MainMenu() : _window() {
-    MainMenu::SetupButtons();
-    MainMenu::SetupGraphics();
+Direction Snake::GetPhysicalDirection()
+{
+    SnakeSegment& head = _snakeBody[0];
+    SnakeSegment& shoulder = _snakeBody[1];
+
+    if(head.position.x == shoulder.position.x)
+        return (head.position.y > shoulder.position.y ? Direction::Down : Direction::Up );
+    if(head.position.y == shoulder.position.y)
+        return (head.position.x > shoulder.position.x ? Direction::Right : Direction::Left );
+
 }
 
-MainMenu::~MainMenu() {
-}
-
-Window& MainMenu::GetWindow(){
-    return _window;
-}
-
-void MainMenu::SetupGraphics() {
-    std::cout << "graphics";
-}
-
-void MainMenu::SetupButtons() {
-    sf::Font font;
-
-    if(!font.loadFromFile("/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf")){
-        return;
+void Snake::Move() {
+    for (int i = _snakeBody.size() - 1; i > 0; --i) {
+        _snakeBody[i].position = _snakeBody[i - 1].position;
     }
 
-    sf::Text start("New game", font);
-    sf::Text settings("Settings", font);
-
-    _buttonStart.setSize({240, 100});
-    _buttonSettings.setSize({240, 100});
-
-    _buttonStart.setOrigin({120,50});
-    _buttonSettings.setOrigin({120,50});
-
-    start.setOrigin({120,50});
-    settings.setOrigin({120,50});
-
-    //start.setPosition({})
-
-    _buttonStart.setPosition({static_cast<float>(_window.GetWindowSize().x/2), static_cast<float>(_window.GetWindowSize().y/2) + 70});
-    _buttonSettings.setPosition({static_cast<float>(_window.GetWindowSize().x/2), static_cast<float>(_window.GetWindowSize().y/2) - 70});
-
-    _buttonStart.setFillColor(sf::Color::White);
-    _buttonSettings.setFillColor(sf::Color::White);
-
+    if (_dir == Direction::Left) {
+        --_snakeBody[0].position.x;
+    } else if (_dir == Direction::Right) {
+        ++_snakeBody[0].position.x;
+    } else if (_dir == Direction::Up) {
+        --_snakeBody[0].position.y;
+    } else if (_dir == Direction::Down) {
+        ++_snakeBody[0].position.y;
+    }
 
 }
 
-void MainMenu::Update() {
-    _window.Update();
+void Snake::CheckCollision() {
+    if (_snakeBody.size() < 5) { return; }
+    SnakeSegment &head = _snakeBody.front();
+    for (auto itr = _snakeBody.begin() + 1; itr != _snakeBody.end(); ++itr) {
+        if (itr->position == head.position) {
+            Lose();
+            break;
+        }
+    }
 }
 
-void MainMenu::Render() {
-    _window.BeginDraw();
-    _window.Draw(_buttonStart);
-    _window.Draw(_buttonSettings);
-    _window.EndDraw();
-}*/
+void Snake::Render(sf::RenderWindow &l_window) {
+    if (_snakeBody.empty()) { return; }
+
+    auto head = _snakeBody.begin();
+    _bodyRect.setFillColor(sf::Color::Yellow);
+    _bodyRect.setPosition(head->position.x * _size, head->position.y * _size);
+    l_window.draw(_bodyRect);
+
+    _bodyRect.setFillColor(sf::Color::Green);
+    for (auto itr = _snakeBody.begin() + 1; itr != _snakeBody.end(); ++itr) {
+        _bodyRect.setPosition(itr->position.x * _size, itr->position.y * _size);
+        l_window.draw(_bodyRect);
+    }
+}
+
+World::World(const sf::Vector2u &l_windSize) {
+    _blockSize = 16;
+
+    _windowSize = l_windSize;
+    RespawnApple();
+    _appleShape.setFillColor(sf::Color::Red);
+    _appleShape.setRadius(_blockSize / 2);
+}
+
+World::~World() {}
+
+void World::RespawnApple() {
+    int maxX = (_windowSize.x / _blockSize);
+    int maxY = (_windowSize.y / _blockSize);
+    _item = sf::Vector2i(
+            rand() % maxX, rand() % maxY);
+    _appleShape.setPosition(
+            _item.x * _blockSize,
+            _item.y * _blockSize);
+}
+
+void World::Update(Snake &l_player, sf::Event ev) {
+    if (l_player.GetPosition() == _item) {
+        l_player.Extend();
+        l_player.IncreaseScore();
+        RespawnApple();
+    }
+    int gridSize_x = _windowSize.x / _blockSize;
+    int gridSize_y = _windowSize.y / _blockSize;
+
+    if (l_player.GetPosition().x == -1) {
+        l_player.SetPosition(sf::Vector2i( gridSize_x-1, l_player.GetPosition().y));
+    }
+    if (l_player.GetPosition().y == -1) {
+        l_player.SetPosition(sf::Vector2i(l_player.GetPosition().x, gridSize_y-1));
+    }
+    if (l_player.GetPosition().y == gridSize_y) {
+        l_player.SetPosition(sf::Vector2i(l_player.GetPosition().x, 0));
+    }
+    if (l_player.GetPosition().x == gridSize_x) {
+        l_player.SetPosition(sf::Vector2i(0, l_player.GetPosition().y));
+    }
+}
+
+void World::Render(sf::RenderWindow &window) {
+    window.draw(_appleShape);
+}
+
+int World::GetBlockSize() { return _blockSize; }
+
+sf::Time Game::GetElapsed() { return _elapsed; }
+
+void Game::RestartClock() { _elapsed += _clock.restart(); }
+
+Textbox::Textbox() {Setup(5,9,200,sf::Vector2f(0,0));}
+Textbox::Textbox(int l_visible, int l_charSize, int l_width, sf::Vector2f l_screenPos) {
+    Setup(l_visible,l_charSize,l_width,l_screenPos);
+}
+Textbox::~Textbox(){Clear();}
+
+void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_screenPos) {
+    _numVisible = l_visible;
+
+    sf::Vector2f offset(2.0f,2.0f);
+
+    _font.loadFromFile("Textures/arial.ttf");
+    _content.setFont(_font);
+    _content.setString("");
+    _content.setCharacterSize(l_charSize);
+    _content.setColor(sf::Color::White);
+    _content.setPosition(l_screenPos+offset);
+
+    _backdrop.setSize(sf::Vector2f(l_width,(l_visible*(l_charSize*1.2f))));
+    _backdrop.setFillColor(sf::Color(90,90,90,90));
+    _backdrop.setPosition(l_screenPos);
+}
+
+void Textbox::Add(std::string l_message) {
+    _messages.push_back(l_message);
+    if(_messages.size()<2){return; }
+    _messages.erase(_messages.begin());
+}
+
+void Textbox::Clear() {
+    _messages.clear();
+}
+
+void Textbox::Render(sf::RenderWindow& l_wind){
+    std::string l_content;
+    for(auto &itr : _messages){
+        l_content.append(itr+"\n");
+    }
+    if(l_content != "") {
+        _content.setString(l_content);
+        l_wind.draw(_backdrop);
+        l_wind.draw(_content);
+    }
+}
+
+//рахобраться с временем
