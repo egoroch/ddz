@@ -25,13 +25,14 @@ public :
     virtual void update(Window &window , sf::Event ev) = 0;
 
 
+
 };
 
 class Window {
 private:
     State *_state;
     sf::RenderWindow _rend_window;
-    sf::Vector2u _windowSize;
+    sf::Vector2f _windowSize;
     std::string _windowTitle;
     bool _isFullScreen;
 
@@ -42,10 +43,12 @@ private:
 
     void Setup(const std::string &title, const sf::Vector2u &size);
 
+
 public:
     Window();
 
     Window(const std::string &title, const sf::Vector2u &size, State *state);
+
 
     ~Window();
 
@@ -53,7 +56,9 @@ public:
 
     bool IsFullScreen();
 
+
     sf::Vector2u GetWindowSize();
+
 
     void ToggleFullScreen();
 
@@ -61,9 +66,44 @@ public:
 
     virtual void render(Window &window) { _state->render(window); };
 
+
     virtual void update(Window &window, sf::Event ev) { _state->update(window,ev); };
 
+
 };
+
+class Button {
+public:
+    Button(sf::RectangleShape button, sf::Text value, sf::Color color, sf::Vector2f size,
+           sf::Vector2f position) : _button(button), _value(value), _color(color), _size(size), _position(position) {
+        _button.setFillColor(_color);
+        _button.setSize(_size);
+        _button.setOrigin(_size.x / 2.0f, _size.y / 2.0f);
+        _button.setPosition(_position);
+
+        sf::FloatRect textRect = _value.getLocalBounds();
+        _value.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+        _value.setPosition(_position);
+    };
+
+    void Draw(Window &window) {
+        window.GetRendWindow()->draw(_button);
+        window.GetRendWindow()->draw(_value);
+    }
+
+private:
+    sf::RectangleShape _button;
+    sf::Text _value;
+    sf::Color _color;
+    sf::Vector2f _size;
+    sf::Vector2f _position;
+};
+
+class MainMenu : public State {
+public:
+    MainMenu(Window* window) : _window(window){};
+
+    void render(Window &window) override;
 
 
 
@@ -133,6 +173,7 @@ private:
     int _blockSize;
 
     sf::CircleShape _appleShape;
+
 };
 
 using MessageContainer = std::vector<std::string>;

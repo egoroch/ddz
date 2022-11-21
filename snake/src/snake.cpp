@@ -3,10 +3,12 @@
 
 // constructors and destructor
 Window::Window() {
-    Setup("Snake", sf::Vector2u(1280, 720));
+    Setup("Snake", sf::Vector2f(1280, 720));
 }
 
+
 Window::Window(const std::string &title, const sf::Vector2u &size, State *state) {
+
     Setup(title, size);
     _state = state;
     Create();
@@ -18,6 +20,7 @@ Window::~Window() {
 
 // functions
 sf::Vector2u Window::GetWindowSize() {
+
     return _windowSize;
 };
 
@@ -32,7 +35,7 @@ void Window::ToggleFullScreen() {
     Create();
 }
 
-void Window::Setup(const std::string &title, const sf::Vector2u &size) {
+void Window::Setup(const std::string &title, const sf::Vector2f &size) {
     _windowTitle = title;
     _windowSize = size;
     _isFullScreen = false;
@@ -45,7 +48,8 @@ sf::RenderWindow *Window::GetRendWindow() {
 
 void Window::Create() {
     auto style = (_isFullScreen ? sf::Style::Fullscreen : sf::Style::Default);
-    _rend_window.create({_windowSize.x, _windowSize.y, 32}, _windowTitle, style);
+    _rend_window.create({static_cast<unsigned int>(_windowSize.x), static_cast<unsigned int>(_windowSize.y), 32},
+                        _windowTitle, style);
 }
 
 void State::setWindow(Window *cw) {
@@ -62,36 +66,67 @@ void Window::setState(State *st) {
 }
 
 void MainMenu::render(Window &window) {
-    //window.GetRendWindow()->clear(sf::Color::Black);
+
+    window.GetRendWindow()->clear(sf::Color::Black);
+    sf::Font font;
+    if (!font.loadFromFile("/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf")) {
+        return;
+    }
+    sf::Text title("The Best Snake", font, 44);
+    title.setFillColor(sf::Color::White);
+    sf::FloatRect titleRect = title.getLocalBounds();
+    title.setOrigin(titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f);
+    title.setPosition(window.GetWindowSize().x / 2, window.GetWindowSize().y / 6);
+
+    sf::RectangleShape button;
+    sf::Color buttonColor = sf::Color::Blue;
+    sf::Vector2f size = {300, 100};
+
+    sf::Text startText("Start", font, 32);
+    startText.setFillColor(sf::Color::Yellow);
+
+    sf::Text settingsText("Settings", font, 32);
+    settingsText.setFillColor(sf::Color::Yellow);
+
+    sf::Text exitText("Exit", font, 32);
+    exitText.setFillColor(sf::Color::Yellow);
+
+    Button start(button, startText, buttonColor, size, {window.GetWindowSize().x / 2, window.GetWindowSize().y / 2});
+    Button settings(button, settingsText, buttonColor, size,
+                    {window.GetWindowSize().x / 2, window.GetWindowSize().y / 2 + 110});
+    Button exit(button, exitText, buttonColor, size,
+                {window.GetWindowSize().x / 2, window.GetWindowSize().y / 2 + 220});
+
+    window.GetRendWindow()->draw(title);
+    start.Draw(window);
+    settings.Draw(window);
+    exit.Draw(window);
+
+
 }
 
-void MainMenu::update(Window &window, sf::Event ev) {
-    window.GetRendWindow()->clear(sf::Color::Magenta);
-    //render stuff
-    sf::Event e;
-    while (window.GetRendWindow()->pollEvent(e)) {
-        if (e.Event::type == sf::Event::Closed)
-            window.GetRendWindow()->close();
-        if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
-            window.GetRendWindow()->close();
+void MainMenu::update() {
+    sf::Event event;
+    while (_window->GetRendWindow()->pollEvent(event)) {
+        if(event.type == sf::Event::Closed){
+            _window->GetRendWindow()->close();
+            break;
+        }
+        if (event.key.code == sf::Keyboard::Escape) {
+            _window->GetRendWindow()->close();
+            break;
+        }
+        if (event.key.code == sf::Keyboard::Num0) {
+            _window->setState(new MainMenu(_window));
+            break;
+        }
+        if (event.key.code == sf::Keyboard::Num2) {
+            _window->setState(new Options(_window));
+            break;
+        }
     }
 };
 
-void Options::render(Window &window) {
-}
-
-void Options::update(Window &window, sf::Event ev) {
-    window.GetRendWindow()->clear(sf::Color::Cyan);
-    //render stuff
-    sf::Event e;
-    while (window.GetRendWindow()->pollEvent(e)) {
-        if (e.Event::type == sf::Event::Closed)
-            window.GetRendWindow()->close();
-        if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
-            window.GetRendWindow()->close();
-
-    };
-}
 
 Game::Game() {
     _window = nullptr;
@@ -164,6 +199,7 @@ Snake::Snake(int l_blockSize) {
     _size = l_blockSize;
     _bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
     Reset();
+
 }
 
 Snake::~Snake() {}

@@ -12,6 +12,7 @@ int main() {
     while (window.GetRendWindow()->isOpen()) {
              window.update(window,event);
 
+
         window.render(window);
 
     }
