@@ -92,6 +92,7 @@ public:
     int GetScore();
     void IncreaseScore();
     bool HasLost();
+    Direction GetPhysicalDirection();
 
     void Lose();
 
@@ -134,6 +135,27 @@ private:
     sf::CircleShape _appleShape;
 };
 
+using MessageContainer = std::vector<std::string>;
+class Textbox{
+public:
+    Textbox();
+    Textbox(int l_visible , int l_charSize, int l_width, sf::Vector2f l_screenPos);
+    ~Textbox();
+
+    void Setup(int l_visible, int l_charSize,int l_width,sf::Vector2f l_screenPos);
+
+    void Add(std::string l_message);
+    void Clear();
+
+    void Render(sf::RenderWindow& l_wind);
+private:
+    MessageContainer _messages;
+    int _numVisible;
+
+    sf::RectangleShape _backdrop;
+    sf::Font _font;
+    sf::Text _content;
+};
 
 class Game : public State {
 private:
@@ -142,6 +164,8 @@ private:
     Snake _snake;
     sf::Clock _clock;
     sf::Time _elapsed;
+    Textbox _text;
+
 
 public:
     Game();
@@ -168,6 +192,7 @@ class MainMenu : public State {
     void update(Window &window, sf::Event ev) override;
 
 };
+
 
 
 

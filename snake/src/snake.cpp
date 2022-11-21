@@ -98,14 +98,15 @@ Game::Game() {
     _snake = Snake(0);
     sf::Vector2u size(0, 0);
     _world = size;
-
+    _text.Setup(1,30,350,sf::Vector2f(225,0));
+    _text.Add("Seeded random number generator with: " + std::to_string(time(NULL)));
 }
 
 Game::Game(Window *window) {
     _window = window;
     _world = World(_window->GetWindowSize());
     _snake = Snake(_world.GetBlockSize());
-
+    _text.Setup(2,14,300,sf::Vector2f(225,0));
 }
 
 Game::~Game() {
@@ -116,6 +117,8 @@ void Game::render(Window &window) {
     window.GetRendWindow()->clear();
     _world.Render(*_window->GetRendWindow());
     _snake.Render(*_window->GetRendWindow());
+    _text.Add(std::to_string(_snake.GetScore()));
+    _text.Render(*_window->GetRendWindow());
     _window->GetRendWindow()->display();
     this->RestartClock();
     // _player->move();
@@ -130,16 +133,16 @@ void Game::update(Window &window, sf::Event ev) {
         if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::Escape)
             _window->GetRendWindow()->close();
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)
-            && _snake.GetDirection() != Direction::Down) {
+            && _snake.GetPhysicalDirection() != Direction::Down) {
             _snake.SetDirection(Direction::Up);
         } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)
-                   && _snake.GetDirection() != Direction::Up) {
+                   && _snake.GetPhysicalDirection() != Direction::Up) {
             _snake.SetDirection(Direction::Down);
         } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)
-                   && _snake.GetDirection() != Direction::Right) {
+                   && _snake.GetPhysicalDirection() != Direction::Right) {
             _snake.SetDirection(Direction::Left);
         } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)
-                   && _snake.GetDirection() != Direction::Left) {
+                   && _snake.GetPhysicalDirection() != Direction::Left) {
             _snake.SetDirection(Direction::Right);
         }
     };
@@ -249,6 +252,18 @@ void Snake::Tick() {
     CheckCollision();
 }
 
+Direction Snake::GetPhysicalDirection()
+{
+    SnakeSegment& head = _snakeBody[0];
+    SnakeSegment& shoulder = _snakeBody[1];
+
+    if(head.position.x == shoulder.position.x)
+        return (head.position.y > shoulder.position.y ? Direction::Down : Direction::Up );
+    if(head.position.y == shoulder.position.y)
+        return (head.position.x > shoulder.position.x ? Direction::Right : Direction::Left );
+
+}
+
 void Snake::Move() {
     for (int i = _snakeBody.size() - 1; i > 0; --i) {
         _snakeBody[i].position = _snakeBody[i - 1].position;
@@ -345,5 +360,50 @@ int World::GetBlockSize() { return _blockSize; }
 sf::Time Game::GetElapsed() { return _elapsed; }
 
 void Game::RestartClock() { _elapsed += _clock.restart(); }
+
+Textbox::Textbox() {Setup(5,9,200,sf::Vector2f(0,0));}
+Textbox::Textbox(int l_visible, int l_charSize, int l_width, sf::Vector2f l_screenPos) {
+    Setup(l_visible,l_charSize,l_width,l_screenPos);
+}
+Textbox::~Textbox(){Clear();}
+
+void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_screenPos) {
+    _numVisible = l_visible;
+
+    sf::Vector2f offset(2.0f,2.0f);
+
+    _font.loadFromFile("Textures/arial.ttf");
+    _content.setFont(_font);
+    _content.setString("");
+    _content.setCharacterSize(l_charSize);
+    _content.setColor(sf::Color::White);
+    _content.setPosition(l_screenPos+offset);
+
+    _backdrop.setSize(sf::Vector2f(l_width,(l_visible*(l_charSize*1.2f))));
+    _backdrop.setFillColor(sf::Color(90,90,90,90));
+    _backdrop.setPosition(l_screenPos);
+}
+
+void Textbox::Add(std::string l_message) {
+    _messages.push_back(l_message);
+    if(_messages.size()<2){return; }
+    _messages.erase(_messages.begin());
+}
+
+void Textbox::Clear() {
+    _messages.clear();
+}
+
+void Textbox::Render(sf::RenderWindow& l_wind){
+    std::string l_content;
+    for(auto &itr : _messages){
+        l_content.append(itr+"\n");
+    }
+    if(l_content != "") {
+        _content.setString(l_content);
+        l_wind.draw(_backdrop);
+        l_wind.draw(_content);
+    }
+}
 
 //рахобраться с временем
