@@ -125,9 +125,14 @@ private:
 };
 
 class MainMenu : public State {
+public:
+    MainMenu(Window* window) : _window(window){};
+
     void render(Window &window) override;
 
     void update() override;
+private:
+    Window* _window;
 };
 
 class Game : public State {
@@ -138,9 +143,13 @@ public:
 };
 
 class Options : public State {
+public:
+    Options(Window* window): _window(window){};
     void render(Window &window) override;
 
     void update() override;
+private:
+    Window* _window;
 };
 
 class Enemy : public Game {

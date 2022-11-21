@@ -22,45 +22,13 @@ int main(){
     }*/
    sf::Vector2f size(1280,700);
    std::string title = "snake";
-   Window window(title,size, new MainMenu);
-   sf::Event ev;
+   Window window(title,size, new MainMenu(&window));
    while(window.GetRendWindow()->isOpen())
    {
-       while(window.GetRendWindow()->pollEvent(ev))
-       {
-           switch(ev.type)
-           {
-               case sf::Event::Closed:
-                   window.GetRendWindow()->close();
-                   break;
-               case sf::Event::KeyPressed:
-                   if(ev.key.code == sf::Keyboard::Escape)
-                       {
-                           window.GetRendWindow()->close();
-                           break;
-                       }
-                    if(ev.key.code == sf::Keyboard::Num0)
-                       {
-                           window.setState(new MainMenu);
-                           break;
-                       }
-                   if(ev.key.code == sf::Keyboard::Num1)
-                       {
-                           window.setState(new Game);
-                           break;
-                       }
-                   if(ev.key.code == sf::Keyboard::Num2)
-                       {
-                           window.setState(new Options);
-                           break;
-                       }
-           }
-       }
        window.render(window);
        window.GetRendWindow()->display();
-
+       window.update();
    }
-
    return 0;
 
 }
