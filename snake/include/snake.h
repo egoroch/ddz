@@ -4,6 +4,7 @@
 
 #ifndef DDZ_SNAKE_H
 #define DDZ_SNAKE_H
+
 #include <iostream>
 #include "SFML/Graphics.hpp"
 #include "SFML/Window.hpp"
@@ -45,75 +46,119 @@ class Window;
 
 class State {
 private:
-    Window* _window;
+    Window *_window;
 
 public :
-    virtual ~State(){}
-    void setWindow(Window* cw);
-    virtual void render(Window& window) =0;
-    virtual void update() =0;
-    virtual void pollEvent() = 0;
+    virtual ~State() {}
+
+    void setWindow(Window *cw);
+
+    virtual void render(Window &window) = 0;
+
+    virtual void update() = 0;
 
 };
 
-class Window{
+class Window {
 private:
-    State* _state;
+    State *_state;
     sf::RenderWindow _rend_window;
-    sf::Vector2u _windowSize;
+    sf::Vector2f _windowSize;
     std::string _windowTitle;
     bool _isDone;
     bool _isFullScreen;
 
     //private functions
     void Destroy();
+
     void Create();
-    void Setup(const std::string& title, const sf::Vector2u& size);
+
+    void Setup(const std::string &title, const sf::Vector2f &size);
+
 public:
     Window();
-    Window(const std::string& title, const sf::Vector2u& size, State* state);
+
+    Window(const std::string &title, const sf::Vector2f &size, State *state);
+
     ~Window();
-    sf::RenderWindow* GetRendWindow();
+
+    sf::RenderWindow *GetRendWindow();
+
     bool IsFullScreen();
-    sf::Vector2u GetWindowSize();
+
+    sf::Vector2f GetWindowSize();
+
     void ToggleFullScreen();
 
-    void setState(State* st);
-    virtual void render(Window& window) {_state->render(window);};
-    virtual void update(){_state->update();};
-    virtual void pollEvent(){_state->pollEvent();};
+    void setState(State *st);
+
+    virtual void render(Window &window) { _state->render(window); };
+
+    virtual void update() { _state->update(); };
 };
 
-
-class MainMenu :public State
-{
-    void render(Window& window) override;
-    void update() override;
-    void pollEvent() override;
-};
-
-class Game :public State
-{
+class Button {
 public:
-    void render(Window& window) override;
-    void update() override;
-    void pollEvent() override;
+    Button(sf::RectangleShape button, sf::Text value, sf::Color color, sf::Vector2f size,
+           sf::Vector2f position) : _button(button), _value(value), _color(color), _size(size), _position(position) {
+        _button.setFillColor(_color);
+        _button.setSize(_size);
+        _button.setOrigin(_size.x / 2.0f, _size.y / 2.0f);
+        _button.setPosition(_position);
+
+        sf::FloatRect textRect = _value.getLocalBounds();
+        _value.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+        _value.setPosition(_position);
+    };
+
+    void Draw(Window &window) {
+        window.GetRendWindow()->draw(_button);
+        window.GetRendWindow()->draw(_value);
+    }
+
+private:
+    sf::RectangleShape _button;
+    sf::Text _value;
+    sf::Color _color;
+    sf::Vector2f _size;
+    sf::Vector2f _position;
 };
 
-class Options :public State
-{
-    void render(Window& window) override;
+class MainMenu : public State {
+public:
+    MainMenu(Window* window) : _window(window){};
+
+    void render(Window &window) override;
+
     void update() override;
-    void pollEvent() override;
+private:
+    Window* _window;
 };
 
-class Enemy :public Game
-{
+class Game : public State {
+public:
+    void render(Window &window) override;
+
+    void update() override;
+};
+
+class Options : public State {
+public:
+    Options(Window* window): _window(window){};
+    void render(Window &window) override;
+
+    void update() override;
+private:
+    Window* _window;
+};
+
+class Enemy : public Game {
 private:
     sf::RectangleShape _enemy;
 public:
     Enemy();
-    sf::RectangleShape GetEnemy(){return _enemy;};
+
+    sf::RectangleShape GetEnemy() { return _enemy; };
 };
 //__________________________________________________________
 
