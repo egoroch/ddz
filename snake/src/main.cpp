@@ -7,10 +7,9 @@ int main() {
     std::string title = "snake";
     Window window(title, size, nullptr);
     window.setState(new Game(&window));
-    sf::Event event;
     window.GetRendWindow()->setFramerateLimit(30);
     while (window.GetRendWindow()->isOpen()) {
-             window.update(window,event);
+             window.update(window);
 
         window.render(window);
 

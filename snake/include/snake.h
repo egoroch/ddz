@@ -22,7 +22,7 @@ public :
 
     virtual void render(Window &window) = 0;
 
-    virtual void update(Window &window , sf::Event ev) = 0;
+    virtual void update(Window &window) = 0;
 
 
 };
@@ -61,7 +61,7 @@ public:
 
     virtual void render(Window &window) { _state->render(window); };
 
-    virtual void update(Window &window, sf::Event ev) { _state->update(window,ev); };
+    virtual void update(Window &window) { _state->update(window); };
 
 };
 
@@ -124,7 +124,7 @@ public:
 
     void RespawnApple();
 
-    void Update(Snake& l_player, sf::Event ev);
+    void Update(Snake& l_player);
     void Render(sf::RenderWindow& window);
 
 private:
@@ -174,7 +174,7 @@ public:
     sf::Time GetElapsed();
     void RestartClock();
     ~Game();
-    void update(Window &window,sf::Event ev) override;
+    void update(Window &window) override;
     void render(Window &window) override;
 
 };
@@ -182,14 +182,14 @@ public:
 class Options : public State {
     void render(Window &window) override;
 
-    void update(Window &window, sf::Event ev) override;
+    void update(Window &window) override;
 
 };
 
 class MainMenu : public State {
     void render(Window &window) override;
 
-    void update(Window &window, sf::Event ev) override;
+    void update(Window &window) override;
 
 };
 

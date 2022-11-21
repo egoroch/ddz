@@ -65,7 +65,7 @@ void MainMenu::render(Window &window) {
     //window.GetRendWindow()->clear(sf::Color::Black);
 }
 
-void MainMenu::update(Window &window, sf::Event ev) {
+void MainMenu::update(Window &window) {
     window.GetRendWindow()->clear(sf::Color::Magenta);
     //render stuff
     sf::Event e;
@@ -80,7 +80,7 @@ void MainMenu::update(Window &window, sf::Event ev) {
 void Options::render(Window &window) {
 }
 
-void Options::update(Window &window, sf::Event ev) {
+void Options::update(Window &window) {
     window.GetRendWindow()->clear(sf::Color::Cyan);
     //render stuff
     sf::Event e;
@@ -125,7 +125,7 @@ void Game::render(Window &window) {
     //_player->render(*(_window->GetRendWindow()));
 }
 
-void Game::update(Window &window, sf::Event ev) {
+void Game::update(Window &window) {
     sf::Event event;
     while (window.GetRendWindow()->pollEvent(event)) {
         if (event.Event::type == sf::Event::Closed)
@@ -150,7 +150,7 @@ void Game::update(Window &window, sf::Event ev) {
 
     if (_elapsed.asSeconds() >= timestep) {
         _snake.Tick();
-        _world.Update(_snake,event);
+        _world.Update(_snake);
         _elapsed -= sf::seconds(timestep);
         if (_snake.HasLost()) {
             _snake.Reset();
@@ -328,7 +328,7 @@ void World::RespawnApple() {
             _item.y * _blockSize);
 }
 
-void World::Update(Snake &l_player, sf::Event ev) {
+void World::Update(Snake &l_player) {
     if (l_player.GetPosition() == _item) {
         l_player.Extend();
         l_player.IncreaseScore();
