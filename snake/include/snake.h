@@ -114,6 +114,40 @@ private:
     sf::RectangleShape _bodyRect; // Shape used in rendering
 };
 
+class SnakeBot{
+public:
+    SnakeBot(int l_blockSize);
+    SnakeBot() = default;
+    ~SnakeBot();
+
+    //methods
+    void SetDirection(Direction l_dir);
+    Direction GetDirection();
+    int GetSpeed();
+    sf::Vector2i GetPosition();
+    void SetPosition(sf::Vector2i l_pos);
+    bool HasLost();
+
+    void Lose();
+
+    void Extend();
+    void Reset();
+
+    void Move(sf::Vector2i apple_position);
+    void Tick(sf::Vector2i apple_position);
+    void Render(sf::RenderWindow& l_window);
+private:
+    void CheckCollision();
+
+    SnakeContainer _snakeBody;
+    int _size;
+    Direction _dir;
+    int _speed;
+    bool _lost;
+    sf::RectangleShape _bodyRect; // Shape used in rendering
+};
+
+
 class World{
 public:
     World(const sf::Vector2u &l_windSize);
@@ -124,14 +158,15 @@ public:
 
     void RespawnApple();
 
-    void Update(Snake& l_player);
+    sf::Vector2i getApplePosition();
+
+    void Update(Snake& l_player,std::vector<SnakeBot>& bots);
     void Render(sf::RenderWindow& window);
 
 private:
     sf::Vector2u _windowSize;
     sf::Vector2i _item;
     int _blockSize;
-
     sf::CircleShape _appleShape;
 };
 
@@ -165,7 +200,7 @@ private:
     sf::Clock _clock;
     sf::Time _elapsed;
     Textbox _text;
-
+    std::vector<SnakeBot> _bots;
 
 public:
     Game();

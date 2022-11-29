@@ -96,20 +96,24 @@ void Options::update(Window &window) {
 Game::Game() {
     _window = nullptr;
     _snake = Snake(0);
+    SnakeBot bot1 = SnakeBot(0);
+    _bots.push_back(bot1);
     sf::Vector2u size(0, 0);
     _world = size;
     _text.Setup(1,30,350,sf::Vector2f(225,0));
-    _text.Add("Seeded random number generator with: " + std::to_string(time(NULL)));
 }
 
 Game::Game(Window *window) {
     _window = window;
     _world = World(_window->GetWindowSize());
     _snake = Snake(_world.GetBlockSize());
-    _text.Setup(2,14,300,sf::Vector2f(225,0));
+    _text.Setup(1,30,_window->GetWindowSize().x,sf::Vector2f(0,_window->GetWindowSize().y-50));
+    SnakeBot bot1 = SnakeBot(_world.GetBlockSize());
+    _bots.push_back(bot1);
 }
 
 Game::~Game() {
+    _bots.clear();
     //delete _player;
 }
 
@@ -117,6 +121,7 @@ void Game::render(Window &window) {
     window.GetRendWindow()->clear();
     _world.Render(*_window->GetRendWindow());
     _snake.Render(*_window->GetRendWindow());
+    _bots[0].Render(*_window->GetRendWindow());
     _text.Add(std::to_string(_snake.GetScore()));
     _text.Render(*_window->GetRendWindow());
     _window->GetRendWindow()->display();
@@ -150,7 +155,8 @@ void Game::update(Window &window) {
 
     if (_elapsed.asSeconds() >= timestep) {
         _snake.Tick();
-        _world.Update(_snake);
+        _bots[0].Tick(this->_world.getApplePosition());
+        _world.Update(_snake,_bots);
         _elapsed -= sf::seconds(timestep);
         if (_snake.HasLost()) {
             _snake.Reset();
@@ -307,10 +313,192 @@ void Snake::Render(sf::RenderWindow &l_window) {
     }
 }
 
+SnakeBot::SnakeBot(int l_blockSize){
+    _size = l_blockSize;
+    _bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
+    Reset();
+}
+
+SnakeBot::~SnakeBot() {}
+
+void SnakeBot::Reset() {
+    _snakeBody.clear();
+
+    _snakeBody.push_back(SnakeSegment(14, 7));
+    _snakeBody.push_back(SnakeSegment(15, 6));
+    _snakeBody.push_back(SnakeSegment(16, 5));
+
+    SetDirection(Direction::Down);
+    _speed = 15;
+    _lost = false;
+}
+
+void SnakeBot::SetDirection(Direction l_dir) { _dir = l_dir; }
+
+Direction SnakeBot::GetDirection() { return _dir; }
+
+int SnakeBot::GetSpeed() { return _speed; }
+
+sf::Vector2i SnakeBot::GetPosition() {
+    return (!_snakeBody.empty() ? _snakeBody.front().position : sf::Vector2i(1, 1));
+}
+
+void SnakeBot::SetPosition(sf::Vector2i l_pos) {
+    _snakeBody.front().position.x = l_pos.x;
+    _snakeBody.front().position.y = l_pos.y;
+}
+
+bool SnakeBot::HasLost() { return _lost; }
+
+void SnakeBot::Lose() { _lost = true; }
+
+void SnakeBot::Extend() {
+    if (_snakeBody.empty()) { return; }
+    SnakeSegment &tail_head =
+            _snakeBody[_snakeBody.size() - 1];
+    if (_snakeBody.size() > 1) {
+        SnakeSegment &tail_bone =
+                _snakeBody[_snakeBody.size() - 2];
+        if (tail_head.position.x == tail_bone.position.x) {
+            if (tail_head.position.y > tail_bone.position.y) {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x, tail_head.position.y + 1));
+            } else {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x, tail_head.position.y - 1));
+            }
+        } else if (tail_head.position.y == tail_bone.position.y) {
+            if (tail_head.position.x > tail_bone.position.x) {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x + 1, tail_head.position.y));
+            } else {
+                _snakeBody.push_back(SnakeSegment(
+                        tail_head.position.x - 1, tail_head.position.y));
+            }
+        }
+    } else {
+        if (_dir == Direction::Up) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x, tail_head.position.y + 1));
+        } else if (_dir == Direction::Down) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x, tail_head.position.y - 1));
+        } else if (_dir == Direction::Left) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x + 1, tail_head.position.y));
+        } else if (_dir == Direction::Right) {
+            _snakeBody.push_back(SnakeSegment(
+                    tail_head.position.x - 1, tail_head.position.y));
+        }
+    }
+}
+
+void SnakeBot::Tick(sf::Vector2i apple_position) {
+    if (_snakeBody.empty()) { return; }
+    if (_dir == Direction::None) { return; }
+    Move(apple_position);
+    CheckCollision();
+}
+
+void SnakeBot::Move(sf::Vector2i apple_position) {
+    for (int i = _snakeBody.size() - 1; i > 0; --i) {
+        _snakeBody[i].position = _snakeBody[i - 1].position;
+    }
+
+    int posX = this->GetPosition().x;
+    int posY = this->GetPosition().y;
+    int posAppleX = apple_position.x;
+    int posAppleY = apple_position.y;
+    double distance =0;
+    double caseUp = abs(posX*posX-posAppleX*posAppleX) + abs((posY-1)*(posY-1)-posAppleY*posAppleY);
+    double caseDown = abs(posX*posX-posAppleX*posAppleX) + abs((posY+1)*(posY+1)-posAppleY*posAppleY);
+    double caseRight = abs((posX+1)*(posX+1)-posAppleX*posAppleX) + abs((posY)*(posY)-posAppleY*posAppleY);
+    double caseLeft = abs((posX-1)*(posX-1)-posAppleX*posAppleX) + abs((posY)*(posY)-posAppleY*posAppleY);
+    if (_dir == Direction::Left) {
+        distance = caseLeft;
+        if (caseLeft <= caseUp && caseLeft<=caseDown) {
+            --_snakeBody[0].position.x;
+        }
+        if (caseUp <= caseLeft && caseUp<=caseDown) {
+            this->SetDirection(Direction::Up);
+            --_snakeBody[0].position.y;
+        }
+        if (caseDown <= caseLeft && caseDown<=caseUp) {
+            this->SetDirection(Direction::Down);
+            ++_snakeBody[0].position.y;
+        }
+
+    } else if (_dir == Direction::Right) {
+        if (caseRight<= caseUp && caseRight<=caseDown) {
+            ++_snakeBody[0].position.x;
+        }
+        if (caseUp <= caseRight && caseUp<=caseDown) {
+            this->SetDirection(Direction::Up);
+            --_snakeBody[0].position.y;
+        }
+        if (caseDown <= caseRight && caseDown<=caseUp) {
+            this->SetDirection(Direction::Down);
+            ++_snakeBody[0].position.y;
+        }
+    } else if (_dir == Direction::Up) {
+        if (caseUp<= caseRight && caseUp<=caseLeft) {
+            --_snakeBody[0].position.y;
+        }
+        if (caseRight <= caseUp && caseRight<=caseLeft) {
+            this->SetDirection(Direction::Right);
+            ++_snakeBody[0].position.x;
+        }
+        if (caseLeft <= caseRight && caseLeft<=caseUp) {
+            this->SetDirection(Direction::Left);
+            --_snakeBody[0].position.x;
+        }
+
+    } else if (_dir == Direction::Down) {
+        if (caseDown<= caseRight && caseDown<=caseLeft) {
+            ++_snakeBody[0].position.y;
+        }
+        if (caseRight <= caseDown && caseRight<=caseLeft) {
+            this->SetDirection(Direction::Right);
+            ++_snakeBody[0].position.x;
+        }
+        if (caseLeft <= caseRight && caseLeft<=caseDown) {
+            this->SetDirection(Direction::Left);
+            --_snakeBody[0].position.x;
+        }
+    }
+
+}
+
+void SnakeBot::CheckCollision() {
+    if (_snakeBody.size() < 5) { return; }
+    SnakeSegment &head = _snakeBody.front();
+    for (auto itr = _snakeBody.begin() + 1; itr != _snakeBody.end(); ++itr) {
+        if (itr->position == head.position) {
+            Lose();
+            break;
+        }
+    }
+}
+
+void SnakeBot::Render(sf::RenderWindow &l_window) {
+    if (_snakeBody.empty()) { return; }
+
+    auto head = _snakeBody.begin();
+    _bodyRect.setFillColor(sf::Color::Yellow);
+    _bodyRect.setPosition(head->position.x * _size, head->position.y * _size);
+    l_window.draw(_bodyRect);
+
+    _bodyRect.setFillColor(sf::Color::Yellow);
+    for (auto itr = _snakeBody.begin() + 1; itr != _snakeBody.end(); ++itr) {
+        _bodyRect.setPosition(itr->position.x * _size, itr->position.y * _size);
+        l_window.draw(_bodyRect);
+    }
+}
+
 World::World(const sf::Vector2u &l_windSize) {
     _blockSize = 16;
-
-    _windowSize = l_windSize;
+    _windowSize.y = l_windSize.y - 50;
+    _windowSize.x = l_windSize.x ;
     RespawnApple();
     _appleShape.setFillColor(sf::Color::Red);
     _appleShape.setRadius(_blockSize / 2);
@@ -328,7 +516,12 @@ void World::RespawnApple() {
             _item.y * _blockSize);
 }
 
-void World::Update(Snake &l_player) {
+sf::Vector2i World::getApplePosition(){
+    sf::Vector2i res = sf::Vector2i ((int)_appleShape.getPosition().x,(int)_appleShape.getPosition().y);
+    return res;
+}
+
+void World::Update(Snake &l_player,std::vector<SnakeBot> &bots) {
     if (l_player.GetPosition() == _item) {
         l_player.Extend();
         l_player.IncreaseScore();
@@ -336,6 +529,21 @@ void World::Update(Snake &l_player) {
     }
     int gridSize_x = _windowSize.x / _blockSize;
     int gridSize_y = _windowSize.y / _blockSize;
+
+    if (bots[0].GetPosition().x == -1) {
+        bots[0].SetPosition(sf::Vector2i( gridSize_x-1, bots[0].GetPosition().y));
+    }
+    if (bots[0].GetPosition().y == -1) {
+        bots[0].SetPosition(sf::Vector2i(bots[0].GetPosition().x, gridSize_y-1));
+    }
+    if (bots[0].GetPosition().y == gridSize_y) {
+        bots[0].SetPosition(sf::Vector2i(bots[0].GetPosition().x, 0));
+    }
+    if (bots[0].GetPosition().x == gridSize_x) {
+        bots[0].SetPosition(sf::Vector2i(0, bots[0].GetPosition().y));
+    }
+
+    //_________________
 
     if (l_player.GetPosition().x == -1) {
         l_player.SetPosition(sf::Vector2i( gridSize_x-1, l_player.GetPosition().y));
@@ -374,7 +582,7 @@ void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_s
 
     _font.loadFromFile("Textures/arial.ttf");
     _content.setFont(_font);
-    _content.setString("");
+    _content.setString("score::");
     _content.setCharacterSize(l_charSize);
     _content.setColor(sf::Color::White);
     _content.setPosition(l_screenPos+offset);
@@ -385,6 +593,7 @@ void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_s
 }
 
 void Textbox::Add(std::string l_message) {
+    l_message = "score: "+l_message;
     _messages.push_back(l_message);
     if(_messages.size()<2){return; }
     _messages.erase(_messages.begin());
@@ -397,13 +606,13 @@ void Textbox::Clear() {
 void Textbox::Render(sf::RenderWindow& l_wind){
     std::string l_content;
     for(auto &itr : _messages){
-        l_content.append(itr+"\n");
+        l_content.append(itr+" ");
     }
-    if(l_content != "") {
+   // if(l_content != "") {
         _content.setString(l_content);
         l_wind.draw(_backdrop);
         l_wind.draw(_content);
-    }
+    //}
 }
 
 //рахобраться с временем
