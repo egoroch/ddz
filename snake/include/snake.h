@@ -246,12 +246,24 @@ private:
 
 class Options : public State {
 public:
+    Options(Window* window) {
+        _window = window;
+
+        sf::Vector2f size = {250, 80};
+        _save = new Button("Save", size, 30, sf::Color::Blue, sf::Color::Yellow);
+        _back = new Button("Back", size, 30, sf::Color::Blue, sf::Color::Yellow);
+    }
 
     void render(Window &window) override;
 
     void update(Window &window) override;
 private:
+    Window* _window;
+    Button* _save;
+    Button* _back;
 
+    bool _isSave;
+    bool _isBack;
 };
 
 

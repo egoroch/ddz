@@ -64,7 +64,7 @@ void Window::setState(State *st) {
 void MainMenu::render(Window& window) {
     window.GetRendWindow()->clear(sf::Color::Black);
     sf::Font font;
-    if (!font.loadFromFile("/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf")) {
+    if (!font.loadFromFile("Textures/arial.ttf")) {
         return;
     }
     _start->setFont(font);
@@ -110,8 +110,7 @@ void MainMenu::render(Window& window) {
 }
 
 void MainMenu::update(Window &window) {
-    window.GetRendWindow()->clear(sf::Color::Magenta);
-    //render stuff
+    window.GetRendWindow()->clear();
     sf::Event e;
     while (window.GetRendWindow()->pollEvent(e)) {
         if (e.Event::type == sf::Event::Closed)
@@ -126,10 +125,44 @@ void MainMenu::update(Window &window) {
             if(e.type == sf::Event::MouseButtonPressed )
                 window.setState(new Game(&window));
         }
+        if(this->_isSettings) {
+            if(e.type == sf::Event::MouseButtonPressed)
+                window.setState(new Options(&window));
+        }
     }
 };
 
 void Options::render(Window &window) {
+    window.GetRendWindow()->clear();
+    sf::Font font;
+    if (!font.loadFromFile("Textures/arial.ttf")) {
+        return;
+    }
+    _save->setFont(font);
+    _back->setFont(font);
+
+    _save->setBackColor(sf::Color::Blue);
+    _save->setTextColor(sf::Color::Yellow);
+    _back->setBackColor(sf::Color::Blue);
+    _back->setTextColor(sf::Color::Yellow);
+
+    _save->setPosition({3.0f*window.GetWindowSize().x/4.0f, 7.0f*window.GetWindowSize().y/8.0f});
+    _back->setPosition({window.GetWindowSize().x/4.0f, 7.0f*window.GetWindowSize().y/8.0f});
+    this->_isSave = this->_save->isMouseOver(*_window->GetRendWindow());
+    this->_isBack = this->_back->isMouseOver(*_window->GetRendWindow());
+    if(_isSave){
+        _save->setBackColor(sf::Color::Red);
+        _save->setTextColor(sf::Color::Green);
+    }
+    if(_isBack){
+        _back->setBackColor(sf::Color::Red);
+        _back->setTextColor(sf::Color::Green);
+    }
+
+    _save->drawTo(*_window->GetRendWindow());
+    _back->drawTo(*_window->GetRendWindow());
+    _window->GetRendWindow()->display();
+
 }
 
 void Options::update(Window &window) {
@@ -141,6 +174,15 @@ void Options::update(Window &window) {
             window.GetRendWindow()->close();
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
             window.GetRendWindow()->close();
+        if(this->_isSave) {
+            if(e.type == sf::Event::MouseButtonPressed)
+                //отправить данные в конфиг
+                window.setState(new MainMenu(&window));
+        }
+        if(this->_isBack) {
+            if(e.type == sf::Event::MouseButtonPressed)
+                window.setState(new MainMenu(&window));
+        }
     };
 }
 
