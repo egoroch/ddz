@@ -56,13 +56,58 @@ bool Window::IsFullScreen() { return _isFullScreen; }
 
 
 void Window::setState(State *st) {
-    if (_state != nullptr) delete _state;
+   // if (_state != nullptr) delete _state;
     _state = st;
     _state->setWindow(this);
 }
 
-void MainMenu::render(Window &window) {
-    //window.GetRendWindow()->clear(sf::Color::Black);
+void MainMenu::render(Window& window) {
+    window.GetRendWindow()->clear(sf::Color::Black);
+    sf::Font font;
+    if (!font.loadFromFile("/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf")) {
+        return;
+    }
+    sf::Text title("The Best Snake", font, 44);
+    title.setFillColor(sf::Color::White);
+    sf::FloatRect titleRect = title.getLocalBounds();
+    title.setOrigin(titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f);
+    title.setPosition(window.GetWindowSize().x / 2, window.GetWindowSize().y / 6);
+
+    sf::Vector2f size = {300, 100};
+
+    Button start("Start", size, 32, sf::Color::Blue, sf::Color::Yellow);
+    start.setFont(font);
+    start.setPosition({window.GetWindowSize().x / 2.0f, window.GetWindowSize().y / 2.0f});
+
+    Button settings("Settings", size, 32, sf::Color::Blue, sf::Color::Yellow);
+    settings.setFont(font);
+    settings.setPosition({window.GetWindowSize().x / 2.0f, window.GetWindowSize().y / 2.0f + 110});
+
+    Button exit("Exit", size, 32, sf::Color::Blue, sf::Color::Yellow);
+    exit.setFont(font);
+    exit.setPosition({window.GetWindowSize().x / 2.0f, window.GetWindowSize().y / 2.0f + 220});
+
+    this->_isStart = start.isMouseOver(*window.GetRendWindow());
+    this->_isExit = exit.isMouseOver(*window.GetRendWindow());
+    this->_isSettings = settings.isMouseOver(*window.GetRendWindow());
+    if(_isStart) {
+        start.setBackColor(sf::Color::Red);
+        start.setTextColor(sf::Color::Green);
+    }
+    if(_isExit) {
+        exit.setBackColor(sf::Color::Red);
+        exit.setTextColor(sf::Color::Green);
+    }
+    if(_isSettings){
+        settings.setBackColor(sf::Color::Red);
+        settings.setTextColor(sf::Color::Green);
+    }
+
+    window.GetRendWindow()->draw(title);
+    start.drawTo(*window.GetRendWindow());
+    settings.drawTo(*window.GetRendWindow());
+    exit.drawTo(*window.GetRendWindow());
+    window.GetRendWindow()->display();
 }
 
 void MainMenu::update(Window &window) {
@@ -74,6 +119,14 @@ void MainMenu::update(Window &window) {
             window.GetRendWindow()->close();
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
             window.GetRendWindow()->close();
+        if(this->_isExit) {
+            if(e.type == sf::Event::MouseButtonPressed)
+                window.GetRendWindow()->close();
+        }
+        if(this->_isStart) {
+            if(e.type == sf::Event::MouseButtonPressed )
+                window.setState(new Game(&window));
+        }
     }
 };
 
@@ -89,7 +142,6 @@ void Options::update(Window &window) {
             window.GetRendWindow()->close();
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
             window.GetRendWindow()->close();
-
     };
 }
 
@@ -130,6 +182,8 @@ void Game::update(Window &window) {
     while (window.GetRendWindow()->pollEvent(event)) {
         if (event.Event::type == sf::Event::Closed)
             _window->GetRendWindow()->close();
+        if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::M)
+            _window->setState(new MainMenu);
         if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::Escape)
             _window->GetRendWindow()->close();
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)

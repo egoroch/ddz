@@ -68,6 +68,7 @@ public:
 
 
 
+
 struct SnakeSegment{
     SnakeSegment(int x,int y) : position(x,y){}
     sf::Vector2i position;
@@ -179,14 +180,90 @@ public:
 
 };
 
+class Button {
+public:
+    Button(std::string btnText, sf::Vector2f buttonSize, int charSize, sf::Color bgColor, sf::Color textColor) {
+        _button.setSize(buttonSize);
+        _button.setFillColor(bgColor);
+
+        // Get these for later use:
+        _btnWidth = buttonSize.x;
+        _btnHeight = buttonSize.y;
+
+        _text.setString(btnText);
+        _text.setCharacterSize(charSize);
+        _text.setColor(textColor);
+    }
+
+    // Pass font by reference:
+    void setFont(sf::Font &fonts) {
+        _text.setFont(fonts);
+    }
+
+    void setBackColor(sf::Color color) {
+        _button.setFillColor(color);
+    }
+
+    void setTextColor(sf::Color color) {
+        _text.setColor(color);
+    }
+
+    void setPosition(sf::Vector2f point) {
+        _button.setOrigin(_btnWidth/2.0f, _btnHeight/2.0f);
+        _button.setPosition(point);
+
+        sf::FloatRect titleRect = _text.getLocalBounds();
+        _text.setOrigin(titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f);
+        _text.setPosition(point);
+    }
+
+    void drawTo(sf::RenderWindow &window) {
+        window.draw(_button);
+        window.draw(_text);
+    }
+
+    // Check if the mouse is within the bounds of the button:
+    bool isMouseOver(sf::RenderWindow &window) {
+        int mouseX = sf::Mouse::getPosition(window).x;
+        int mouseY = sf::Mouse::getPosition(window).y;
+
+        int btnPosX = _button.getPosition().x - _btnWidth/2.0f;
+        int btnPosY = _button.getPosition().y - _btnHeight/2.0f;
+
+        int btnxPosWidth = _button.getPosition().x + _btnWidth/2.0f;
+        int btnyPosHeight = _button.getPosition().y + _btnHeight/2.0f;
+
+
+        return mouseX < btnxPosWidth && mouseX > btnPosX && mouseY < btnyPosHeight && mouseY > btnPosY;
+    }
+private:
+    sf::RectangleShape _button;
+    sf::Text _text;
+
+    int _btnWidth;
+    int _btnHeight;
+};
+
 class Options : public State {
+public:
+
     void render(Window &window) override;
 
     void update(Window &window) override;
 
 };
 
+
+
 class MainMenu : public State {
+private:
+    bool _isStart = false;
+    bool _isSettings = false;
+    bool _isExit = false;
+public:
+
+    MainMenu(){};
+
     void render(Window &window) override;
 
     void update(Window &window) override;
