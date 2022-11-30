@@ -56,28 +56,113 @@ bool Window::IsFullScreen() { return _isFullScreen; }
 
 
 void Window::setState(State *st) {
-    if (_state != nullptr) delete _state;
+   // if (_state != nullptr) delete _state;
     _state = st;
     _state->setWindow(this);
 }
 
-void MainMenu::render(Window &window) {
-    //window.GetRendWindow()->clear(sf::Color::Black);
+void MainMenu::render(Window& window) {
+    window.GetRendWindow()->clear(sf::Color::Black);
+    sf::Font font;
+    if (!font.loadFromFile("Textures/arial.ttf")) {
+        return;
+    }
+    _start->setFont(font);
+    _settings->setFont(font);
+    _exit->setFont(font);
+    _title.setFont(font);
+
+    _start->setBackColor(sf::Color::Blue);
+    _start->setTextColor(sf::Color::Yellow);
+    _settings->setBackColor(sf::Color::Blue);
+    _settings->setTextColor(sf::Color::Yellow);
+    _exit->setBackColor(sf::Color::Blue);
+    _exit->setTextColor(sf::Color::Yellow);
+
+    _start->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f});
+    _settings->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 110});
+    _exit->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 220});
+    sf::FloatRect titleRect = _title.getLocalBounds();
+    _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
+    _title.setPosition(_window->GetWindowSize().x / 2, _window->GetWindowSize().y / 6);
+
+    this->_isStart = _start->isMouseOver(*window.GetRendWindow());
+    this->_isExit = _exit->isMouseOver(*this->_window->GetRendWindow());
+    this->_isSettings = _settings->isMouseOver(*this->_window->GetRendWindow());
+    if(_isStart) {
+        _start->setBackColor(sf::Color::Red);
+        _start->setTextColor(sf::Color::Green);
+    }
+    if(_isExit) {
+        _exit->setBackColor(sf::Color::Red);
+        _exit->setTextColor(sf::Color::Green);
+    }
+    if(_isSettings){
+        _settings->setBackColor(sf::Color::Red);
+        _settings->setTextColor(sf::Color::Green);
+    }
+
+    window.GetRendWindow()->draw(_title);
+    _start->drawTo(*window.GetRendWindow());
+    _settings->drawTo(*window.GetRendWindow());
+    _exit->drawTo(*window.GetRendWindow());
+    _window->GetRendWindow()->display();
 }
 
 void MainMenu::update(Window &window) {
-    window.GetRendWindow()->clear(sf::Color::Magenta);
-    //render stuff
+    window.GetRendWindow()->clear();
     sf::Event e;
     while (window.GetRendWindow()->pollEvent(e)) {
         if (e.Event::type == sf::Event::Closed)
             window.GetRendWindow()->close();
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
             window.GetRendWindow()->close();
+        if(this->_isExit) {
+            if(e.type == sf::Event::MouseButtonPressed)
+                window.GetRendWindow()->close();
+        }
+        if(this->_isStart) {
+            if(e.type == sf::Event::MouseButtonPressed )
+                window.setState(new Game(&window));
+        }
+        if(this->_isSettings) {
+            if(e.type == sf::Event::MouseButtonPressed)
+                window.setState(new Options(&window));
+        }
     }
 };
 
 void Options::render(Window &window) {
+    window.GetRendWindow()->clear();
+    sf::Font font;
+    if (!font.loadFromFile("Textures/arial.ttf")) {
+        return;
+    }
+    _save->setFont(font);
+    _back->setFont(font);
+
+    _save->setBackColor(sf::Color::Blue);
+    _save->setTextColor(sf::Color::Yellow);
+    _back->setBackColor(sf::Color::Blue);
+    _back->setTextColor(sf::Color::Yellow);
+
+    _save->setPosition({3.0f*window.GetWindowSize().x/4.0f, 7.0f*window.GetWindowSize().y/8.0f});
+    _back->setPosition({window.GetWindowSize().x/4.0f, 7.0f*window.GetWindowSize().y/8.0f});
+    this->_isSave = this->_save->isMouseOver(*_window->GetRendWindow());
+    this->_isBack = this->_back->isMouseOver(*_window->GetRendWindow());
+    if(_isSave){
+        _save->setBackColor(sf::Color::Red);
+        _save->setTextColor(sf::Color::Green);
+    }
+    if(_isBack){
+        _back->setBackColor(sf::Color::Red);
+        _back->setTextColor(sf::Color::Green);
+    }
+
+    _save->drawTo(*_window->GetRendWindow());
+    _back->drawTo(*_window->GetRendWindow());
+    _window->GetRendWindow()->display();
+
 }
 
 void Options::update(Window &window) {
@@ -89,7 +174,15 @@ void Options::update(Window &window) {
             window.GetRendWindow()->close();
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
             window.GetRendWindow()->close();
-
+        if(this->_isSave) {
+            if(e.type == sf::Event::MouseButtonPressed)
+                //отправить данные в конфиг
+                window.setState(new MainMenu(&window));
+        }
+        if(this->_isBack) {
+            if(e.type == sf::Event::MouseButtonPressed)
+                window.setState(new MainMenu(&window));
+        }
     };
 }
 
@@ -161,6 +254,8 @@ void Game::update(Window &window) {
     while (window.GetRendWindow()->pollEvent(event)) {
         if (event.Event::type == sf::Event::Closed)
             _window->GetRendWindow()->close();
+        if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::M)
+            _window->setState(new MainMenu(_window));
         if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::Escape)
             _window->GetRendWindow()->close();
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)

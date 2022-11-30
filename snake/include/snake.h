@@ -68,6 +68,7 @@ public:
 
 
 
+
 struct SnakeSegment{
     SnakeSegment(int x,int y) : position(x,y){}
     sf::Vector2i position;
@@ -221,18 +222,123 @@ public:
 
 };
 
-class Options : public State {
-    void render(Window &window) override;
+class Button {
+public:
+    Button(std::string btnText, sf::Vector2f buttonSize, int charSize, sf::Color bgColor, sf::Color textColor) {
+        _button.setSize(buttonSize);
+        _button.setFillColor(bgColor);
 
-    void update(Window &window) override;
+        // Get these for later use:
+        _btnWidth = buttonSize.x;
+        _btnHeight = buttonSize.y;
 
+        _text.setString(btnText);
+        _text.setCharacterSize(charSize);
+        _text.setColor(textColor);
+    }
+
+    // Pass font by reference:
+    void setFont(sf::Font &fonts) {
+        _text.setFont(fonts);
+    }
+
+    void setBackColor(sf::Color color) {
+        _button.setFillColor(color);
+    }
+
+    void setTextColor(sf::Color color) {
+        _text.setColor(color);
+    }
+
+    void setPosition(sf::Vector2f point) {
+        _button.setOrigin(_btnWidth/2.0f, _btnHeight/2.0f);
+        _button.setPosition(point);
+
+        sf::FloatRect titleRect = _text.getLocalBounds();
+        _text.setOrigin(titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f);
+        _text.setPosition(point);
+    }
+
+    void drawTo(sf::RenderWindow &window) {
+        window.draw(_button);
+        window.draw(_text);
+    }
+
+    // Check if the mouse is within the bounds of the button:
+    bool isMouseOver(sf::RenderWindow &window) {
+        int mouseX = sf::Mouse::getPosition(window).x;
+        int mouseY = sf::Mouse::getPosition(window).y;
+
+        int btnPosX = _button.getPosition().x - _btnWidth/2.0f;
+        int btnPosY = _button.getPosition().y - _btnHeight/2.0f;
+
+        int btnxPosWidth = _button.getPosition().x + _btnWidth/2.0f;
+        int btnyPosHeight = _button.getPosition().y + _btnHeight/2.0f;
+
+
+        return mouseX < btnxPosWidth && mouseX > btnPosX && mouseY < btnyPosHeight && mouseY > btnPosY;
+    }
+private:
+    sf::RectangleShape _button;
+    sf::Text _text;
+
+    int _btnWidth;
+    int _btnHeight;
 };
 
-class MainMenu : public State {
+class Options : public State {
+public:
+    Options(Window* window) {
+        _window = window;
+
+        sf::Vector2f size = {250, 80};
+        _save = new Button("Save", size, 30, sf::Color::Blue, sf::Color::Yellow);
+        _back = new Button("Back", size, 30, sf::Color::Blue, sf::Color::Yellow);
+    }
+
     void render(Window &window) override;
 
     void update(Window &window) override;
+private:
+    Window* _window;
+    Button* _save;
+    Button* _back;
 
+    bool _isSave;
+    bool _isBack;
+};
+
+
+
+class MainMenu : public State {
+public:
+
+    MainMenu(Window* window){
+        _window = window;
+        sf::Vector2f size = {300, 100};
+        _start = new Button("Start", size, 32, sf::Color::Blue, sf::Color::Yellow);
+        _settings = new Button("Settings", size, 32, sf::Color::Blue, sf::Color::Yellow);
+        _exit = new Button("Exit", size, 32, sf::Color::Blue, sf::Color::Yellow);
+
+        _title.setCharacterSize(44);
+        _title.setString("The Best Snake");
+        _title.setFillColor(sf::Color::White);
+
+    };
+
+    void render(Window &window) override;
+
+    void update(Window &window) override;
+private:
+    Window* _window;
+    sf::Text _title;
+    Button* _start;
+    Button* _settings;
+    Button* _exit;
+
+    bool _isStart = false;
+    bool _isSettings = false;
+    bool _isExit = false;
 };
 
 // в функицю collision передавать массив препятствий и позицию которую надо проверить
