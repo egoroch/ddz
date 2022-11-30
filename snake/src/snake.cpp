@@ -279,7 +279,9 @@ void Game::update(Window &window) {
         std::vector<sf::Vector2i> allItems = this->get_game_items();
         _snake.Tick(allItems);
         _bots[0].Tick(_world.getApplePosition(),allItems);
-
+        allItems = this->get_game_items();
+        _bots[0]. CheckCollision(allItems);
+        _snake.CheckCollision(allItems);
         //_bots[0].ChangeDirection(this->_world.getApplePosition());
 
         _world.Update(_snake,_bots);
@@ -393,7 +395,7 @@ void Snake::Tick(std::vector<sf::Vector2i> items) {
     if (_snakeBody.empty()) { return; }
     if (_dir == Direction::None) { return; }
     Move();
-    CheckCollision(items);
+   // CheckCollision(items);
 }
 
 Direction Snake::GetPhysicalDirection()
@@ -428,8 +430,12 @@ void Snake::Move() {
 void Snake::CheckCollision(std::vector<sf::Vector2i> items) {
     //if (_snakeBody.size() < 5) { return; }
      auto head = _snakeBody.begin();
+     int CountMatches =0;
     for (auto itr = items.begin() ; itr != items.end(); ++itr) {
         if (*itr == head->position) {
+            CountMatches++;
+        }
+        if(2==CountMatches) {
             Lose();
             break;
         }
@@ -603,7 +609,7 @@ void SnakeBot::Tick(sf::Vector2i apple_position, std::vector<sf::Vector2i> items
     if (_dir == Direction::None) { return; }
     this->ChangeDirection(apple_position, items);
     Move(apple_position);
-    CheckCollision(items);
+    //CheckCollision(items);
 }
 
 void SnakeBot::Move(sf::Vector2i apple_position) {
@@ -627,12 +633,16 @@ void SnakeBot::Disappear(){
 
 void SnakeBot::CheckCollision(std::vector<sf::Vector2i> items) {
     auto head = _snakeBody.begin();
+    int CountMatches =0;
     for (auto itr = items.begin() ; itr != items.end(); ++itr) {
         if (*itr == head->position) {
+            CountMatches++;
+        }
+        if(CountMatches ==2) {
             Lose();
             break;
         }
-    }
+        }
 }
 
 void SnakeBot::Render(sf::RenderWindow &l_window) {

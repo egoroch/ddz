@@ -104,9 +104,10 @@ public:
     void Move();
     void Tick(std::vector<sf::Vector2i> items);
     void Render(sf::RenderWindow& l_window);
-private:
-    void CheckCollision(std::vector<sf::Vector2i> items);
 
+
+    void CheckCollision(std::vector<sf::Vector2i> items);
+private:
     SnakeContainer _snakeBody;
     int _size;
     Direction _dir;
@@ -139,9 +140,9 @@ public:
     void Move(sf::Vector2i apple_position);
     void Tick(sf::Vector2i apple_position,std::vector<sf::Vector2i>);
     void Render(sf::RenderWindow& l_window);
-private:
-    void CheckCollision(std::vector<sf::Vector2i> items);
 
+    void CheckCollision(std::vector<sf::Vector2i> items);
+private:
     SnakeContainer _snakeBody;
     int _size;
     Direction _dir;
