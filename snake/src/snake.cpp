@@ -67,47 +67,46 @@ void MainMenu::render(Window& window) {
     if (!font.loadFromFile("/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf")) {
         return;
     }
-    sf::Text title("The Best Snake", font, 44);
-    title.setFillColor(sf::Color::White);
-    sf::FloatRect titleRect = title.getLocalBounds();
-    title.setOrigin(titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f);
-    title.setPosition(window.GetWindowSize().x / 2, window.GetWindowSize().y / 6);
+    _start->setFont(font);
+    _settings->setFont(font);
+    _exit->setFont(font);
+    _title.setFont(font);
 
-    sf::Vector2f size = {300, 100};
+    _start->setBackColor(sf::Color::Blue);
+    _start->setTextColor(sf::Color::Yellow);
+    _settings->setBackColor(sf::Color::Blue);
+    _settings->setTextColor(sf::Color::Yellow);
+    _exit->setBackColor(sf::Color::Blue);
+    _exit->setTextColor(sf::Color::Yellow);
 
-    Button start("Start", size, 32, sf::Color::Blue, sf::Color::Yellow);
-    start.setFont(font);
-    start.setPosition({window.GetWindowSize().x / 2.0f, window.GetWindowSize().y / 2.0f});
+    _start->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f});
+    _settings->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 110});
+    _exit->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 220});
+    sf::FloatRect titleRect = _title.getLocalBounds();
+    _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
+    _title.setPosition(_window->GetWindowSize().x / 2, _window->GetWindowSize().y / 6);
 
-    Button settings("Settings", size, 32, sf::Color::Blue, sf::Color::Yellow);
-    settings.setFont(font);
-    settings.setPosition({window.GetWindowSize().x / 2.0f, window.GetWindowSize().y / 2.0f + 110});
-
-    Button exit("Exit", size, 32, sf::Color::Blue, sf::Color::Yellow);
-    exit.setFont(font);
-    exit.setPosition({window.GetWindowSize().x / 2.0f, window.GetWindowSize().y / 2.0f + 220});
-
-    this->_isStart = start.isMouseOver(*window.GetRendWindow());
-    this->_isExit = exit.isMouseOver(*window.GetRendWindow());
-    this->_isSettings = settings.isMouseOver(*window.GetRendWindow());
+    this->_isStart = _start->isMouseOver(*window.GetRendWindow());
+    this->_isExit = _exit->isMouseOver(*this->_window->GetRendWindow());
+    this->_isSettings = _settings->isMouseOver(*this->_window->GetRendWindow());
     if(_isStart) {
-        start.setBackColor(sf::Color::Red);
-        start.setTextColor(sf::Color::Green);
+        _start->setBackColor(sf::Color::Red);
+        _start->setTextColor(sf::Color::Green);
     }
     if(_isExit) {
-        exit.setBackColor(sf::Color::Red);
-        exit.setTextColor(sf::Color::Green);
+        _exit->setBackColor(sf::Color::Red);
+        _exit->setTextColor(sf::Color::Green);
     }
     if(_isSettings){
-        settings.setBackColor(sf::Color::Red);
-        settings.setTextColor(sf::Color::Green);
+        _settings->setBackColor(sf::Color::Red);
+        _settings->setTextColor(sf::Color::Green);
     }
 
-    window.GetRendWindow()->draw(title);
-    start.drawTo(*window.GetRendWindow());
-    settings.drawTo(*window.GetRendWindow());
-    exit.drawTo(*window.GetRendWindow());
-    window.GetRendWindow()->display();
+    window.GetRendWindow()->draw(_title);
+    _start->drawTo(*window.GetRendWindow());
+    _settings->drawTo(*window.GetRendWindow());
+    _exit->drawTo(*window.GetRendWindow());
+    _window->GetRendWindow()->display();
 }
 
 void MainMenu::update(Window &window) {
@@ -183,7 +182,7 @@ void Game::update(Window &window) {
         if (event.Event::type == sf::Event::Closed)
             _window->GetRendWindow()->close();
         if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::M)
-            _window->setState(new MainMenu);
+            _window->setState(new MainMenu(_window));
         if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::Escape)
             _window->GetRendWindow()->close();
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)

@@ -250,24 +250,41 @@ public:
     void render(Window &window) override;
 
     void update(Window &window) override;
+private:
 
 };
 
 
 
 class MainMenu : public State {
-private:
-    bool _isStart = false;
-    bool _isSettings = false;
-    bool _isExit = false;
 public:
 
-    MainMenu(){};
+    MainMenu(Window* window){
+        _window = window;
+        sf::Vector2f size = {300, 100};
+        _start = new Button("Start", size, 32, sf::Color::Blue, sf::Color::Yellow);
+        _settings = new Button("Settings", size, 32, sf::Color::Blue, sf::Color::Yellow);
+        _exit = new Button("Exit", size, 32, sf::Color::Blue, sf::Color::Yellow);
+
+        _title.setCharacterSize(44);
+        _title.setString("The Best Snake");
+        _title.setFillColor(sf::Color::White);
+
+    };
 
     void render(Window &window) override;
 
     void update(Window &window) override;
+private:
+    Window* _window;
+    sf::Text _title;
+    Button* _start;
+    Button* _settings;
+    Button* _exit;
 
+    bool _isStart = false;
+    bool _isSettings = false;
+    bool _isExit = false;
 };
 
 
