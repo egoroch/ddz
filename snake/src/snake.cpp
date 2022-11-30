@@ -103,6 +103,10 @@ Game::Game() {
     _text.Setup(1,30,350,sf::Vector2f(225,0));
 }
 
+SnakeBot& Game::getSnakeBot(int i){
+    return _bots[i];
+}
+
 Game::Game(Window *window) {
     _window = window;
     _world = World(_window->GetWindowSize());
@@ -110,6 +114,28 @@ Game::Game(Window *window) {
     _text.Setup(1,30,_window->GetWindowSize().x,sf::Vector2f(0,_window->GetWindowSize().y-50));
     SnakeBot bot1 = SnakeBot(_world.GetBlockSize());
     _bots.push_back(bot1);
+}
+
+std::vector<sf::Vector2i> Game::get_game_items(){
+    std::vector<sf::Vector2i> res;
+    std::vector<sf::Vector2i>  fromWorld = _world.get_world_items();
+    std::vector<sf::Vector2i>  fromSnake = _snake.getBodySnake();
+    //   sizeof(arr)/sizeof(arr[0]);
+    for(auto itr = fromWorld.begin();itr<fromWorld.end();++itr){
+        res.push_back(*itr);
+    }
+    for(auto itr = fromSnake.begin();itr<fromSnake.end();++itr){
+        res.push_back(*itr);
+    }
+    for (auto itr = _bots.begin();itr != _bots.end();++itr)
+    {
+        std::vector<sf::Vector2i>  fromBot = itr->getBodySnake();
+        for(auto pointer = fromBot.begin();pointer != fromBot.end();++pointer){
+            res.push_back(*pointer);
+        }
+    }
+    return res;
+
 }
 
 Game::~Game() {
@@ -151,15 +177,23 @@ void Game::update(Window &window) {
             _snake.SetDirection(Direction::Right);
         }
     };
-    float timestep = 1.0f / _snake.GetSpeed();
+    float timestepMainSnake = 1.0f / _snake.GetSpeed();
 
-    if (_elapsed.asSeconds() >= timestep) {
-        _snake.Tick();
-        _bots[0].Tick(this->_world.getApplePosition());
+    if (_elapsed.asSeconds() >= timestepMainSnake) {
+
+        std::vector<sf::Vector2i> allItems = this->get_game_items();
+        _snake.Tick(allItems);
+        _bots[0].Tick(_world.getApplePosition(),allItems);
+
+        //_bots[0].ChangeDirection(this->_world.getApplePosition());
+
         _world.Update(_snake,_bots);
-        _elapsed -= sf::seconds(timestep);
+        _elapsed -= sf::seconds(timestepMainSnake);
         if (_snake.HasLost()) {
             _snake.Reset();
+        }
+        if (_bots[0].HasLost()) {
+             _bots[0].Disappear();
         }
   }
     this->RestartClock();
@@ -182,9 +216,18 @@ void Snake::Reset() {
     _snakeBody.push_back(SnakeSegment(5, 5));
 
     SetDirection(Direction::None);
-    _speed = 15;
+    _speed = 10;
     _score = 0;
     _lost = false;
+}
+
+std::vector<sf::Vector2i> Snake::getBodySnake(){
+    std::vector<sf::Vector2i> res;
+    for (auto itr = _snakeBody.begin() ; itr != _snakeBody.end(); ++itr)
+    {
+        res.push_back(sf::Vector2i(itr->position.x,itr->position.y));
+    }
+    return res;
 }
 
 void Snake::SetDirection(Direction l_dir) { _dir = l_dir; }
@@ -251,11 +294,11 @@ void Snake::Extend() {
     }
 }
 
-void Snake::Tick() {
+void Snake::Tick(std::vector<sf::Vector2i> items) {
     if (_snakeBody.empty()) { return; }
     if (_dir == Direction::None) { return; }
     Move();
-    CheckCollision();
+    CheckCollision(items);
 }
 
 Direction Snake::GetPhysicalDirection()
@@ -287,11 +330,11 @@ void Snake::Move() {
 
 }
 
-void Snake::CheckCollision() {
-    if (_snakeBody.size() < 5) { return; }
-    SnakeSegment &head = _snakeBody.front();
-    for (auto itr = _snakeBody.begin() + 1; itr != _snakeBody.end(); ++itr) {
-        if (itr->position == head.position) {
+void Snake::CheckCollision(std::vector<sf::Vector2i> items) {
+    //if (_snakeBody.size() < 5) { return; }
+     auto head = _snakeBody.begin();
+    for (auto itr = items.begin() ; itr != items.end(); ++itr) {
+        if (*itr == head->position) {
             Lose();
             break;
         }
@@ -324,9 +367,9 @@ SnakeBot::~SnakeBot() {}
 void SnakeBot::Reset() {
     _snakeBody.clear();
 
+    _snakeBody.push_back(SnakeSegment(14, 5));
+    _snakeBody.push_back(SnakeSegment(14, 6));
     _snakeBody.push_back(SnakeSegment(14, 7));
-    _snakeBody.push_back(SnakeSegment(15, 6));
-    _snakeBody.push_back(SnakeSegment(16, 5));
 
     SetDirection(Direction::Down);
     _speed = 15;
@@ -335,7 +378,74 @@ void SnakeBot::Reset() {
 
 void SnakeBot::SetDirection(Direction l_dir) { _dir = l_dir; }
 
-Direction SnakeBot::GetDirection() { return _dir; }
+std::vector<sf::Vector2i> SnakeBot::getBodySnake(){
+    std::vector<sf::Vector2i> res;
+    for (auto itr = _snakeBody.begin() ; itr != _snakeBody.end(); ++itr)
+    {
+        res.push_back(sf::Vector2i(itr->position.x,itr->position.y));
+    }
+    return res;
+}
+
+void SnakeBot::ChangeDirection(sf::Vector2i apple_position, std::vector<sf::Vector2i> items) {
+    bool DangerLeft = false;
+    bool DangerRight = false;
+    bool DangerUp = false;
+    bool DangerFalse = false;
+   // for(auto itr = items.begin(); itr!=items.end();++itr )
+    //{
+      //  if(items == )
+    //}
+    int posX = this->GetPosition().x;
+    int posY = this->GetPosition().y;
+    int posAppleX = apple_position.x;
+    int posAppleY = apple_position.y;
+    double distance =0;
+    double caseUp = abs(posX*posX-posAppleX*posAppleX) + abs((posY-1)*(posY-1)-posAppleY*posAppleY);
+    double caseDown = abs(posX*posX-posAppleX*posAppleX) + abs((posY+1)*(posY+1)-posAppleY*posAppleY);
+    double caseRight = abs((posX+1)*(posX+1)-posAppleX*posAppleX) + abs((posY)*(posY)-posAppleY*posAppleY);
+    double caseLeft = abs((posX-1)*(posX-1)-posAppleX*posAppleX) + abs((posY)*(posY)-posAppleY*posAppleY);
+    if (_dir == Direction::Left) {
+        distance = caseLeft;
+        if (caseLeft <= caseUp && caseLeft<=caseDown) {
+        }
+        if (caseUp <= caseLeft && caseUp<=caseDown) {
+            this->SetDirection(Direction::Up);
+        }
+        if (caseDown <= caseLeft && caseDown<=caseUp) {
+            this->SetDirection(Direction::Down);
+        }
+
+    } else if (_dir == Direction::Right) {
+        if (caseRight<= caseUp && caseRight<=caseDown) {
+        }
+        if (caseUp <= caseRight && caseUp<=caseDown) {
+            this->SetDirection(Direction::Up);
+        }
+        if (caseDown <= caseRight && caseDown<=caseUp) {
+            this->SetDirection(Direction::Down);
+        }
+    } else if (_dir == Direction::Up) {
+        if (caseUp<= caseRight && caseUp<=caseLeft) {
+        }
+        if (caseRight <= caseUp && caseRight<=caseLeft) {
+            this->SetDirection(Direction::Right);
+        }
+        if (caseLeft <= caseRight && caseLeft<=caseUp) {
+            this->SetDirection(Direction::Left);
+        }
+
+    } else if (_dir == Direction::Down) {
+        if (caseDown<= caseRight && caseDown<=caseLeft) {
+        }
+        if (caseRight <= caseDown && caseRight<=caseLeft) {
+            this->SetDirection(Direction::Right);
+        }
+        if (caseLeft <= caseRight && caseLeft<=caseDown) {
+            this->SetDirection(Direction::Left);
+        }
+    }
+}
 
 int SnakeBot::GetSpeed() { return _speed; }
 
@@ -393,11 +503,12 @@ void SnakeBot::Extend() {
     }
 }
 
-void SnakeBot::Tick(sf::Vector2i apple_position) {
+void SnakeBot::Tick(sf::Vector2i apple_position, std::vector<sf::Vector2i> items) {
     if (_snakeBody.empty()) { return; }
     if (_dir == Direction::None) { return; }
+    this->ChangeDirection(apple_position, items);
     Move(apple_position);
-    CheckCollision();
+    CheckCollision(items);
 }
 
 void SnakeBot::Move(sf::Vector2i apple_position) {
@@ -405,75 +516,24 @@ void SnakeBot::Move(sf::Vector2i apple_position) {
         _snakeBody[i].position = _snakeBody[i - 1].position;
     }
 
-    int posX = this->GetPosition().x;
-    int posY = this->GetPosition().y;
-    int posAppleX = apple_position.x;
-    int posAppleY = apple_position.y;
-    double distance =0;
-    double caseUp = abs(posX*posX-posAppleX*posAppleX) + abs((posY-1)*(posY-1)-posAppleY*posAppleY);
-    double caseDown = abs(posX*posX-posAppleX*posAppleX) + abs((posY+1)*(posY+1)-posAppleY*posAppleY);
-    double caseRight = abs((posX+1)*(posX+1)-posAppleX*posAppleX) + abs((posY)*(posY)-posAppleY*posAppleY);
-    double caseLeft = abs((posX-1)*(posX-1)-posAppleX*posAppleX) + abs((posY)*(posY)-posAppleY*posAppleY);
     if (_dir == Direction::Left) {
-        distance = caseLeft;
-        if (caseLeft <= caseUp && caseLeft<=caseDown) {
             --_snakeBody[0].position.x;
-        }
-        if (caseUp <= caseLeft && caseUp<=caseDown) {
-            this->SetDirection(Direction::Up);
-            --_snakeBody[0].position.y;
-        }
-        if (caseDown <= caseLeft && caseDown<=caseUp) {
-            this->SetDirection(Direction::Down);
-            ++_snakeBody[0].position.y;
-        }
-
     } else if (_dir == Direction::Right) {
-        if (caseRight<= caseUp && caseRight<=caseDown) {
             ++_snakeBody[0].position.x;
-        }
-        if (caseUp <= caseRight && caseUp<=caseDown) {
-            this->SetDirection(Direction::Up);
-            --_snakeBody[0].position.y;
-        }
-        if (caseDown <= caseRight && caseDown<=caseUp) {
-            this->SetDirection(Direction::Down);
-            ++_snakeBody[0].position.y;
-        }
     } else if (_dir == Direction::Up) {
-        if (caseUp<= caseRight && caseUp<=caseLeft) {
             --_snakeBody[0].position.y;
-        }
-        if (caseRight <= caseUp && caseRight<=caseLeft) {
-            this->SetDirection(Direction::Right);
-            ++_snakeBody[0].position.x;
-        }
-        if (caseLeft <= caseRight && caseLeft<=caseUp) {
-            this->SetDirection(Direction::Left);
-            --_snakeBody[0].position.x;
-        }
-
     } else if (_dir == Direction::Down) {
-        if (caseDown<= caseRight && caseDown<=caseLeft) {
             ++_snakeBody[0].position.y;
         }
-        if (caseRight <= caseDown && caseRight<=caseLeft) {
-            this->SetDirection(Direction::Right);
-            ++_snakeBody[0].position.x;
-        }
-        if (caseLeft <= caseRight && caseLeft<=caseDown) {
-            this->SetDirection(Direction::Left);
-            --_snakeBody[0].position.x;
-        }
-    }
-
+}
+void SnakeBot::Disappear(){
+    _snakeBody.clear();
 }
 
-void SnakeBot::CheckCollision() {
-    if (_snakeBody.size() < 5) { return; }
-    SnakeSegment &head = _snakeBody.front();
-    for (auto itr = _snakeBody.begin() + 1; itr != _snakeBody.end(); ++itr) {
-        if (itr->position == head.position) {
+void SnakeBot::CheckCollision(std::vector<sf::Vector2i> items) {
+    auto head = _snakeBody.begin();
+    for (auto itr = items.begin() ; itr != items.end(); ++itr) {
+        if (*itr == head->position) {
             Lose();
             break;
         }
@@ -506,6 +566,13 @@ World::World(const sf::Vector2u &l_windSize) {
 
 World::~World() {}
 
+
+std::vector<sf::Vector2i> World::get_world_items(){
+    std::vector<sf::Vector2i> result;
+    result.push_back(sf::Vector2i(-1,-1));
+    return result;
+}
+
 void World::RespawnApple() {
     int maxX = (_windowSize.x / _blockSize);
     int maxY = (_windowSize.y / _blockSize);
@@ -517,8 +584,7 @@ void World::RespawnApple() {
 }
 
 sf::Vector2i World::getApplePosition(){
-    sf::Vector2i res = sf::Vector2i ((int)_appleShape.getPosition().x,(int)_appleShape.getPosition().y);
-    return res;
+    return _item;
 }
 
 void World::Update(Snake &l_player,std::vector<SnakeBot> &bots) {
@@ -527,6 +593,14 @@ void World::Update(Snake &l_player,std::vector<SnakeBot> &bots) {
         l_player.IncreaseScore();
         RespawnApple();
     }
+
+    if (bots[0].GetPosition() == _item) {
+        bots[0].Extend();
+        RespawnApple();
+
+    }
+    //менять положение на нечетных клетках (ослабит бота)
+    //bots[0].ChangeDirection(_item);
     int gridSize_x = _windowSize.x / _blockSize;
     int gridSize_y = _windowSize.y / _blockSize;
 

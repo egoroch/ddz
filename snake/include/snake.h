@@ -94,16 +94,17 @@ public:
     bool HasLost();
     Direction GetPhysicalDirection();
 
+    std::vector<sf::Vector2i> getBodySnake();
     void Lose();
 
     void Extend();
     void Reset();
 
     void Move();
-    void Tick();
+    void Tick(std::vector<sf::Vector2i> items);
     void Render(sf::RenderWindow& l_window);
 private:
-    void CheckCollision();
+    void CheckCollision(std::vector<sf::Vector2i> items);
 
     SnakeContainer _snakeBody;
     int _size;
@@ -122,22 +123,23 @@ public:
 
     //methods
     void SetDirection(Direction l_dir);
-    Direction GetDirection();
+    void ChangeDirection(sf::Vector2i apple_pos ,std::vector<sf::Vector2i> items );
     int GetSpeed();
     sf::Vector2i GetPosition();
     void SetPosition(sf::Vector2i l_pos);
     bool HasLost();
-
+    void Disappear();
+    std::vector<sf::Vector2i> getBodySnake();
     void Lose();
 
     void Extend();
     void Reset();
 
     void Move(sf::Vector2i apple_position);
-    void Tick(sf::Vector2i apple_position);
+    void Tick(sf::Vector2i apple_position,std::vector<sf::Vector2i>);
     void Render(sf::RenderWindow& l_window);
 private:
-    void CheckCollision();
+    void CheckCollision(std::vector<sf::Vector2i> items);
 
     SnakeContainer _snakeBody;
     int _size;
@@ -163,11 +165,14 @@ public:
     void Update(Snake& l_player,std::vector<SnakeBot>& bots);
     void Render(sf::RenderWindow& window);
 
+    std::vector<sf::Vector2i> get_world_items();
+
 private:
     sf::Vector2u _windowSize;
     sf::Vector2i _item;
     int _blockSize;
     sf::CircleShape _appleShape;
+    std::vector<sf::Vector2i> allItems;
 };
 
 using MessageContainer = std::vector<std::string>;
@@ -201,6 +206,7 @@ private:
     sf::Time _elapsed;
     Textbox _text;
     std::vector<SnakeBot> _bots;
+    std::vector<sf::Vector2i> get_game_items();
 
 public:
     Game();
@@ -211,6 +217,7 @@ public:
     ~Game();
     void update(Window &window) override;
     void render(Window &window) override;
+    SnakeBot& getSnakeBot(int i);
 
 };
 
@@ -228,7 +235,12 @@ class MainMenu : public State {
 
 };
 
-
+// в функицю collision передавать массив препятствий и позицию которую надо проверить
+//змейка будет смотреть +-1 во все стороны и отталкиваться от этого
+//можно передать в функцию collision все объекты (кроме яблока) и потом через указатели брать их положение (еще лучше сделать массив с ключами и смотеть по нему)
+//голова бота читает все препятсвия кроме головы игрока (свою голову с ней никогда не столкнется)
+//world get items пуст пока  . он нужен для стенок
+// в items  вхожят все объекты для столкновения т е кроме яблок
 
 
 
