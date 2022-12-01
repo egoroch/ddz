@@ -67,45 +67,84 @@ void MainMenu::render(Window& window) {
     if (!font.loadFromFile("Textures/arial.ttf")) {
         return;
     }
-    _start->setFont(font);
-    _settings->setFont(font);
-    _exit->setFont(font);
-    _title.setFont(font);
+    if(this->_isStart){
+        sf::Text rounds("Count of rounds", font);
+        sf::FloatRect label = rounds.getLocalBounds();
+        rounds.setOrigin({label.left + label.width / 2.0f, label.top + label.height / 2.0f});
+        rounds.setPosition({_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
+        rounds.setFillColor(sf::Color::White);
+        sf::RectangleShape input({200, 50});
+        input.setOrigin({100, 25});
+        input.setPosition({3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
+        sf::Color grey(100,100,100);
+        input.setFillColor(grey);
 
-    _start->setBackColor(sf::Color::Blue);
-    _start->setTextColor(sf::Color::Yellow);
-    _settings->setBackColor(sf::Color::Blue);
-    _settings->setTextColor(sf::Color::Yellow);
-    _exit->setBackColor(sf::Color::Blue);
-    _exit->setTextColor(sf::Color::Yellow);
+        _window->GetRendWindow()->draw(input);
+        _window->GetRendWindow()->draw(rounds);
+        _window->GetRendWindow()->display();
+    } else {
+        _start->setFont(font);
+        _settings->setFont(font);
+        _exit->setFont(font);
+        _title.setFont(font);
 
-    _start->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f});
-    _settings->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 110});
-    _exit->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 220});
-    sf::FloatRect titleRect = _title.getLocalBounds();
-    _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
-    _title.setPosition(_window->GetWindowSize().x / 2, _window->GetWindowSize().y / 6);
+        _start->setBackColor(sf::Color::Blue);
+        _start->setTextColor(sf::Color::Yellow);
+        _settings->setBackColor(sf::Color::Blue);
+        _settings->setTextColor(sf::Color::Yellow);
+        _exit->setBackColor(sf::Color::Blue);
+        _exit->setTextColor(sf::Color::Yellow);
 
-    this->_isStart = _start->isMouseOver(*window.GetRendWindow());
-    this->_isExit = _exit->isMouseOver(*this->_window->GetRendWindow());
-    this->_isSettings = _settings->isMouseOver(*this->_window->GetRendWindow());
-    if(_isStart) {
-        _start->setBackColor(sf::Color::Red);
-        _start->setTextColor(sf::Color::Green);
+        _start->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f});
+        _settings->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 110});
+        _exit->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 220});
+        sf::FloatRect titleRect = _title.getLocalBounds();
+        _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
+        _title.setPosition(_window->GetWindowSize().x / 2, _window->GetWindowSize().y / 6);
+
+        //this->_isStart = _start->isMouseOver(*this->_window->GetRendWindow());
+        this->_isExit = _exit->isMouseOver(*this->_window->GetRendWindow());
+        this->_isSettings = _settings->isMouseOver(*this->_window->GetRendWindow());
+        if (_start->isMouseOver(*this->_window->GetRendWindow())) {
+            _start->setBackColor(sf::Color::Red);
+            _start->setTextColor(sf::Color::Green);
+        }
+        if (_isExit) {
+            _exit->setBackColor(sf::Color::Red);
+            _exit->setTextColor(sf::Color::Green);
+        }
+        if (_isSettings) {
+            _settings->setBackColor(sf::Color::Red);
+            _settings->setTextColor(sf::Color::Green);
+        }
+
+        window.GetRendWindow()->draw(_title);
+        _start->drawTo(*window.GetRendWindow());
+        _settings->drawTo(*window.GetRendWindow());
+        _exit->drawTo(*window.GetRendWindow());
+        _window->GetRendWindow()->display();
     }
-    if(_isExit) {
-        _exit->setBackColor(sf::Color::Red);
-        _exit->setTextColor(sf::Color::Green);
-    }
-    if(_isSettings){
-        _settings->setBackColor(sf::Color::Red);
-        _settings->setTextColor(sf::Color::Green);
-    }
+}
 
-    window.GetRendWindow()->draw(_title);
-    _start->drawTo(*window.GetRendWindow());
-    _settings->drawTo(*window.GetRendWindow());
-    _exit->drawTo(*window.GetRendWindow());
+void MainMenu::renderStart(Window &window) {
+    window.GetRendWindow()->clear();
+    sf::Font font;
+    if (!font.loadFromFile("Textures/arial.ttf")) {
+        return;
+    }
+    sf::Text rounds("Count of rounds", font);
+    sf::FloatRect label = rounds.getLocalBounds();
+    rounds.setOrigin({label.left + label.width / 2.0f, label.top + label.height / 2.0f});
+    rounds.setPosition({_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
+    rounds.setFillColor(sf::Color::White);
+    sf::RectangleShape input({200, 50});
+    input.setOrigin({100, 25});
+    input.setPosition({3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
+    sf::Color grey(100,100,100);
+    input.setFillColor(grey);
+
+    _window->GetRendWindow()->draw(input);
+    _window->GetRendWindow()->draw(rounds);
     _window->GetRendWindow()->display();
 }
 
@@ -121,9 +160,13 @@ void MainMenu::update(Window &window) {
             if(e.type == sf::Event::MouseButtonPressed)
                 window.GetRendWindow()->close();
         }
-        if(this->_isStart) {
-            if(e.type == sf::Event::MouseButtonPressed )
-                window.setState(new Game(&window));
+        if(this->_start->isMouseOver(*window.GetRendWindow()) && e.type == sf::Event::MouseButtonPressed) {
+            this->_isStart = true;
+           // if()
+              //  this->_isStart = false;
+                //this->renderStart(window);
+                /*window.setState(new Game(&window));*/
+
         }
         if(this->_isSettings) {
             if(e.type == sf::Event::MouseButtonPressed)
@@ -140,6 +183,7 @@ json MainMenu::getConfig(const std::string &fileName) {
     }
 
     json config = json::parse(inpFile);
+    return config;
 }
 
 void Options::render(Window &window) {
@@ -763,7 +807,7 @@ void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_s
     _content.setFont(_font);
     _content.setString("score::");
     _content.setCharacterSize(l_charSize);
-    _content.setColor(sf::Color::White);
+    _content.setFillColor(sf::Color::White);
     _content.setPosition(l_screenPos+offset);
 
     _backdrop.setSize(sf::Vector2f(l_width,(l_visible*(l_charSize*1.2f))));

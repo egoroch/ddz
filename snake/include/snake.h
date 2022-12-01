@@ -234,7 +234,7 @@ public:
 
         _text.setString(btnText);
         _text.setCharacterSize(charSize);
-        _text.setColor(textColor);
+        _text.setFillColor(textColor);
     }
 
     // Pass font by reference:
@@ -247,7 +247,7 @@ public:
     }
 
     void setTextColor(sf::Color color) {
-        _text.setColor(color);
+        _text.setFillColor(color);
     }
 
     void setPosition(sf::Vector2f point) {
@@ -327,6 +327,8 @@ public:
     };
 
     void render(Window &window) override;
+
+    void renderStart(Window& window);
 
     void update(Window &window) override;
 
