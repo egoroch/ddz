@@ -409,6 +409,7 @@ public:
         _exit = new Button("Exit", size, 32, sf::Color::Blue, sf::Color::Yellow);
         _textField = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
         _textFieldBots = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 2.0f*_window->GetWindowSize().y/6.0f });
+        _textUser = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 3.0f*_window->GetWindowSize().y/6.0f });
 
 
         _title.setCharacterSize(44);
@@ -431,6 +432,7 @@ private:
     Button* _exit;
     TextField* _textField;
     TextField* _textFieldBots;
+    TextField* _textUser;
 
     bool _isStart = false;
     bool _isSettings = false;

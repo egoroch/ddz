@@ -1,10 +1,10 @@
 
 #include "../include/snake.h"
 
-sf::Text makeText(std::string text,  sf::Font& font, sf::Vector2f position, sf::Color color, int charSize) {
+sf::Text makeText(std::string text, sf::Font &font, sf::Vector2f position, sf::Color color, int charSize) {
     sf::Text result(text, font, charSize);
     sf::FloatRect resultRect = result.getLocalBounds();
-    result.setOrigin(resultRect.left + resultRect.width/2.0f, resultRect.top + resultRect.height/2.0f);
+    result.setOrigin(resultRect.left + resultRect.width / 2.0f, resultRect.top + resultRect.height / 2.0f);
     result.setPosition(position);
     result.setFillColor(color);
 
@@ -80,24 +80,30 @@ void MainMenu::render(Window &window) {
     sf::Texture button;
     button.loadFromFile("./picture/64/button.png");
 
-    if(this->_isStart){
-        sf::Text rounds = makeText("Count of rounds", font, {_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
-        sf::Text bots = makeText("Count of bots", font, {_window->GetWindowSize().x/4.0f, 2.0f*_window->GetWindowSize().y/6.0f });
+    if (this->_isStart) {
+        sf::Text rounds = makeText("Count of rounds", font,
+                                   {_window->GetWindowSize().x / 4.0f, _window->GetWindowSize().y / 6.0f});
+        sf::Text bots = makeText("Count of bots", font,
+                                 {_window->GetWindowSize().x / 4.0f, 2.0f * _window->GetWindowSize().y / 6.0f});
+        sf::Text user = makeText("Count of players", font,
+                                 {_window->GetWindowSize().x / 4.0f, 3.0f * _window->GetWindowSize().y / 6.0f});
 
         _startGame->setFont(font);
         _startGame->setBackColor(sf::Color::Blue);
         _startGame->setTextColor(sf::Color::Yellow);
-        _startGame->setPosition({window.GetWindowSize().x/2.0f, 7.0f*window.GetWindowSize().y/8.0f});
-        if(_startGame->isMouseOver(*_window->GetRendWindow())){
+        _startGame->setPosition({window.GetWindowSize().x / 2.0f, 7.0f * window.GetWindowSize().y / 8.0f});
+        if (_startGame->isMouseOver(*_window->GetRendWindow())) {
             _startGame->setBackColor(sf::Color::Red);
             _startGame->setTextColor(sf::Color::Green);
         }
         _startGame->getButton().setTexture(&button);
         _window->GetRendWindow()->draw(rounds);
         _window->GetRendWindow()->draw(bots);
+        _window->GetRendWindow()->draw(user);
         _startGame->drawTo(*_window->GetRendWindow());
         _textField->draw(*window.GetRendWindow());
         _textFieldBots->draw(*window.GetRendWindow());
+        _textUser->draw(*window.GetRendWindow());
         _window->GetRendWindow()->display();
     } else {
         _start->setFont(font);
@@ -146,6 +152,7 @@ void MainMenu::update(Window &window) {
     window.GetRendWindow()->clear();
     int round = -1;
     int bot = -1;
+    int user = -1;
     sf::Event e;
     while (window.GetRendWindow()->pollEvent(e)) {
         if (e.Event::type == sf::Event::Closed)
@@ -163,22 +170,25 @@ void MainMenu::update(Window &window) {
         if (this->_startGame->isMouseOver(*window.GetRendWindow())) {
             if (e.type == sf::Event::MouseButtonPressed) {
                 std::cout << _textField->getString() << " " << _textFieldBots->getString();
-                if(_textField->getString().size() == 0 || _textFieldBots->getString().size() == 0) {
+                if (_textField->getString().size() == 0 || _textFieldBots->getString().size() == 0 ||
+                    _textUser->getString().size() == 0) {
                     continue;
                 } else {
                     round = std::stoi(_textField->getString());
                     bot = std::stoi(_textFieldBots->getString());
+                    user = std::stoi(_textUser->getString());
                     window.setState(new Game(&window, bot));
                 }
             }
         }
-        if(e.type == sf::Event::MouseButtonReleased) {
+        if (e.type == sf::Event::MouseButtonReleased) {
             _textField->released(*window.GetRendWindow(), e);
             _textFieldBots->released(*window.GetRendWindow(), e);
-        }
-        else {
+            _textUser->released(*window.GetRendWindow(), e);
+        } else {
             _textField->handleInput(e);
             _textFieldBots->handleInput(e);
+            _textUser->handleInput(e);
         }
         if (this->_isSettings) {
             if (e.type == sf::Event::MouseButtonPressed)
@@ -189,7 +199,7 @@ void MainMenu::update(Window &window) {
 
 json MainMenu::getConfig(const std::string &fileName) {
     std::ifstream inpFile(fileName);
-    if(!inpFile){
+    if (!inpFile) {
         //возвращает default значения
         return 1;
     }
@@ -255,7 +265,7 @@ void Options::update(Window &window) {
 Game::Game() {
     _window = nullptr;
     _snake = Snake(0);
-    SnakeBot bot1 = SnakeBot(0,sf::Vector2i(-1,-1));
+    SnakeBot bot1 = SnakeBot(0, sf::Vector2i(-1, -1));
     _bots.push_back(bot1);
     sf::Vector2u size(0, 0);
     _world = size;
@@ -266,7 +276,7 @@ SnakeBot &Game::getSnakeBot(int i) {
     return _bots[i];
 }
 
-Game::Game(Window *window , int countOfBots) {
+Game::Game(Window *window, int countOfBots) {
     _window = window;
     _world = World(_window->GetWindowSize());
     _snake = Snake(_world.GetBlockSize());
@@ -283,10 +293,10 @@ Game::Game(Window *window , int countOfBots) {
     }
 
     _text.Setup(1, 30, _window->GetWindowSize().x, sf::Vector2f(0, _window->GetWindowSize().y - 50));
-    _bots = this->CreateAllBots(window,_world.GetBlockSize(),res,countOfBots);
+    _bots = this->CreateAllBots(window, _world.GetBlockSize(), res, countOfBots);
     //SnakeBot bot1 = SnakeBot(_world.GetBlockSize(),sf::Vector2i(14,7));
     //SnakeBot bot2 = SnakeBot(_world.GetBlockSize());
-   // _bots.push_back(bot1);
+    // _bots.push_back(bot1);
     //_bots.push_back(bot2);
 }
 
@@ -320,8 +330,8 @@ void Game::render(Window &window) {
     window.GetRendWindow()->clear();
     _world.Render(*_window->GetRendWindow());
     _snake.Render(*_window->GetRendWindow());
-    for(auto itr = _bots.begin();itr != _bots.end();++itr)
-    itr->Render(*_window->GetRendWindow());
+    for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
+        itr->Render(*_window->GetRendWindow());
     _text.Add(std::to_string(_snake.GetScore()));
     _text.Render(*_window->GetRendWindow());
     _window->GetRendWindow()->display();
@@ -359,13 +369,13 @@ void Game::update(Window &window) {
 
         std::vector<sf::Vector2i> allItems = this->get_game_items();
         _snake.Tick(allItems);
-            for (auto itr = _bots.begin() + 1; itr != _bots.end(); ++itr)
-                itr->Tick(_world.getApplePosition(), allItems, _snake.GetDirection());
-            _bots.begin()->Tick(sf::Vector2i(_snake.GetPosition().x + 2, _snake.GetPosition().y), allItems,
-                                _snake.GetDirection());
-            allItems = this->get_game_items();
+        for (auto itr = _bots.begin() + 1; itr != _bots.end(); ++itr)
+            itr->Tick(_world.getApplePosition(), allItems, _snake.GetDirection());
+        _bots.begin()->Tick(sf::Vector2i(_snake.GetPosition().x + 2, _snake.GetPosition().y), allItems,
+                            _snake.GetDirection());
+        allItems = this->get_game_items();
         for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
-        itr->CheckCollision(allItems);
+            itr->CheckCollision(allItems);
         _snake.CheckCollision(allItems);
         //_bots[0].ChangeDirection(this->_world.getApplePostition());
 
@@ -375,23 +385,23 @@ void Game::update(Window &window) {
             _snake.Reset();
         }
         for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
-        if (itr->HasLost()) {
-            itr->Disappear();
-        }
+            if (itr->HasLost()) {
+                itr->Disappear();
+            }
     }
     this->RestartClock();
 };
 
-std::vector<SnakeBot> Game::CreateAllBots(Window *window ,int blockSIze , std::vector<sf::Vector2i> items, int count){
+std::vector<SnakeBot> Game::CreateAllBots(Window *window, int blockSIze, std::vector<sf::Vector2i> items, int count) {
     std::vector<SnakeBot> res;
     int maxX = (window->GetWindowSize().x / blockSIze);
     int maxY = (window->GetWindowSize().y / blockSIze);
     sf::Vector2i head;
     //head = sf::Vector2i(rand() % maxX, rand() % (maxY-3));
 
-    for(int i = 0 ; i<count;++i)
-    {   int Check = -1;
-        while(Check != 0) {
+    for (int i = 0; i < count; ++i) {
+        int Check = -1;
+        while (Check != 0) {
             Check++;
             head = sf::Vector2i(rand() % maxX, (rand() % (maxY - 3)) + 3);
 
@@ -402,11 +412,11 @@ std::vector<SnakeBot> Game::CreateAllBots(Window *window ,int blockSIze , std::v
 
             }
         }
-        items.push_back(sf::Vector2i(head.x,head.y));
-        items.push_back(sf::Vector2i(head.x,head.y-1));
-        items.push_back(sf::Vector2i(head.x,head.y-2));
+        items.push_back(sf::Vector2i(head.x, head.y));
+        items.push_back(sf::Vector2i(head.x, head.y - 1));
+        items.push_back(sf::Vector2i(head.x, head.y - 2));
 
-        res.push_back(SnakeBot(blockSIze,head));
+        res.push_back(SnakeBot(blockSIze, head));
     }
     return res;
 }
@@ -570,7 +580,7 @@ void Snake::Render(sf::RenderWindow &l_window) {
     }
 }
 
-SnakeBot::SnakeBot(int l_blockSize,sf::Vector2i headPos) {
+SnakeBot::SnakeBot(int l_blockSize, sf::Vector2i headPos) {
     _size = l_blockSize;
     _bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
     Reset(headPos);
@@ -581,8 +591,8 @@ SnakeBot::~SnakeBot() {}
 void SnakeBot::Reset(sf::Vector2i headPos) {
     _snakeBody.clear();
 
-    _snakeBody.push_back(SnakeSegment(headPos.x, headPos.y-2));
-    _snakeBody.push_back(SnakeSegment(headPos.x, headPos.y-1));
+    _snakeBody.push_back(SnakeSegment(headPos.x, headPos.y - 2));
+    _snakeBody.push_back(SnakeSegment(headPos.x, headPos.y - 1));
     _snakeBody.push_back(SnakeSegment(headPos.x, headPos.y));
 
     SetDirection(Direction::Down);
@@ -600,7 +610,7 @@ std::vector<sf::Vector2i> SnakeBot::getBodySnake() {
     return res;
 }
 
-void SnakeBot::ChangeDirection(sf::Vector2i apple_position, std::vector<sf::Vector2i> items ,Direction player_dir) {
+void SnakeBot::ChangeDirection(sf::Vector2i apple_position, std::vector<sf::Vector2i> items, Direction player_dir) {
     bool DangerLeft = false;
     bool DangerRight = false;
     bool DangerUp = false;
@@ -862,12 +872,13 @@ void SnakeBot::Extend() {
     }
 }
 
-void SnakeBot::Tick(sf::Vector2i apple_position, std::vector<sf::Vector2i> items,Direction player_dir) {
+void SnakeBot::Tick(sf::Vector2i apple_position, std::vector<sf::Vector2i> items, Direction player_dir) {
     if (_snakeBody.empty()) { return; }
     if (player_dir == Direction::None) {
-        return; }
-    this->ChangeDirection(apple_position, items,player_dir);
-        Move(apple_position);
+        return;
+    }
+    this->ChangeDirection(apple_position, items, player_dir);
+    Move(apple_position);
     //CheckCollision(items);//CheckCollision(items);
 }
 
@@ -931,15 +942,15 @@ World::World(const sf::Vector2u &l_windSize) {
     std::vector<sf::Vector2i> stonesPos;
     std::vector<sf::RectangleShape> stones;
     srand(unsigned(time(0)));
-    int countOfStones = 5+ (rand() % 7);
+    int countOfStones = 5 + (rand() % 7);
     int maxX = (_windowSize.x / _blockSize);
     int maxY = (_windowSize.y / _blockSize);
-    for (int i=0;i<countOfStones;++i){
-        stonesPos.push_back(sf::Vector2i( rand() % maxX, rand() % maxY));
+    for (int i = 0; i < countOfStones; ++i) {
+        stonesPos.push_back(sf::Vector2i(rand() % maxX, rand() % maxY));
         stones.push_back(sf::RectangleShape());
-        stones[i].setPosition(stonesPos[i].x*_blockSize,stonesPos[i].y*_blockSize);
+        stones[i].setPosition(stonesPos[i].x * _blockSize, stonesPos[i].y * _blockSize);
         stones[i].setFillColor(sf::Color::Blue);
-        stones[i].setSize(sf::Vector2f(_blockSize,_blockSize));
+        stones[i].setSize(sf::Vector2f(_blockSize, _blockSize));
     }
     _stonesPos = stonesPos;
     _stoneShape = stones;
@@ -954,8 +965,8 @@ World::~World() {}
 
 std::vector<sf::Vector2i> World::get_world_items() {
     std::vector<sf::Vector2i> result;
-    for(auto itr = _stonesPos.begin();itr!=_stonesPos.end();++itr)
-    result.push_back(*itr);
+    for (auto itr = _stonesPos.begin(); itr != _stonesPos.end(); ++itr)
+        result.push_back(*itr);
     return result;
 }
 
@@ -974,18 +985,18 @@ sf::Vector2i World::getApplePosition() {
     return _item;
 }
 
-void World::Update(Snake &l_player, std::vector<SnakeBot> &bots ,std::vector<sf::Vector2i> items) {
+void World::Update(Snake &l_player, std::vector<SnakeBot> &bots, std::vector<sf::Vector2i> items) {
     if (l_player.GetPosition() == _item) {
         l_player.Extend();
         l_player.IncreaseScore();
         RespawnApple();
     }
     for (auto itr = bots.begin(); itr != bots.end(); ++itr)
-    if (itr->GetPosition() == _item) {
-        itr->Extend();
-        RespawnApple();
+        if (itr->GetPosition() == _item) {
+            itr->Extend();
+            RespawnApple();
 
-    }
+        }
     //менять положение на нечетных клетках (ослабит бота)
     //bots[0].ChangeDirection(_item);
     int gridSize_x = _windowSize.x / _blockSize;
@@ -1022,8 +1033,7 @@ void World::Update(Snake &l_player, std::vector<SnakeBot> &bots ,std::vector<sf:
 
 void World::Render(sf::RenderWindow &window) {
     window.draw(_appleShape);
-    for(auto i = _stoneShape.begin();i!= _stoneShape.end();++i)
-    {
+    for (auto i = _stoneShape.begin(); i != _stoneShape.end(); ++i) {
         window.draw(*i);
     }
 }
@@ -1053,7 +1063,7 @@ void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_s
     _content.setCharacterSize(l_charSize);
 
     _content.setFillColor(sf::Color::White);
-    _content.setPosition(l_screenPos+offset);
+    _content.setPosition(l_screenPos + offset);
 
 
     _backdrop.setSize(sf::Vector2f(l_width, (l_visible * (l_charSize * 1.2f))));
