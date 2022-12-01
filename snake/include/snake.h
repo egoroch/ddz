@@ -175,7 +175,10 @@ private:
     sf::Vector2i _item;
     int _blockSize;
     sf::CircleShape _appleShape;
-    std::vector<sf::Vector2i> allItems;
+    std::vector<sf::Vector2i> _stonesPos;
+   // sf::RectangleShape _stone;
+    std::vector<sf::RectangleShape> _stoneShape;
+
 };
 
 using MessageContainer = std::vector<std::string>;

@@ -217,7 +217,7 @@ Game::Game(Window *window , int countOfBots) {
     }
 
     _text.Setup(1, 30, _window->GetWindowSize().x, sf::Vector2f(0, _window->GetWindowSize().y - 50));
-    _bots = this->CreateAllBots(window,_world.GetBlockSize(),res,3);
+    _bots = this->CreateAllBots(window,_world.GetBlockSize(),res,countOfBots);
     //SnakeBot bot1 = SnakeBot(_world.GetBlockSize(),sf::Vector2i(14,7));
     //SnakeBot bot2 = SnakeBot(_world.GetBlockSize());
    // _bots.push_back(bot1);
@@ -856,24 +856,31 @@ void SnakeBot::Render(sf::RenderWindow &l_window) {
 
 World::World(const sf::Vector2u &l_windSize) {
     _blockSize = 32;
-
-    /*
-     * void World::RespawnApple() {
-    int maxX = (_windowSize.x / _blockSize);
-    int maxY = (_windowSize.y / _blockSize);
-    _item = sf::Vector2i(
-            rand() % maxX, rand() % maxY);
-    _appleShape.setPosition(
-            _item.x * _blockSize,
-            _item.y * _blockSize);
-}
-     * */
-
     _windowSize.y = l_windSize.y - 50;
     _windowSize.x = l_windSize.x;
     RespawnApple();
     _appleShape.setFillColor(sf::Color::Red);
     _appleShape.setRadius(_blockSize / 2);
+    //_______________________
+    std::vector<sf::Vector2i> stonesPos;
+    std::vector<sf::RectangleShape> stones;
+    srand(unsigned(time(0)));
+    int countOfStones = 5+ (rand() % 7);
+    int maxX = (_windowSize.x / _blockSize);
+    int maxY = (_windowSize.y / _blockSize);
+    for (int i=0;i<countOfStones;++i){
+        stonesPos.push_back(sf::Vector2i( rand() % maxX, rand() % maxY));
+        stones.push_back(sf::RectangleShape());
+        stones[i].setPosition(stonesPos[i].x*_blockSize,stonesPos[i].y*_blockSize);
+        stones[i].setFillColor(sf::Color::Blue);
+        stones[i].setSize(sf::Vector2f(_blockSize,_blockSize));
+    }
+    _stonesPos = stonesPos;
+    _stoneShape = stones;
+    //_________________
+    //  std::vector<sf::Vector2i> _allStones;
+    //    sf::RectangleShape _stone;
+    //обновить добавление ов все айтемы для мтолкнований
 }
 
 World::~World() {}
@@ -881,7 +888,8 @@ World::~World() {}
 
 std::vector<sf::Vector2i> World::get_world_items() {
     std::vector<sf::Vector2i> result;
-    result.push_back(sf::Vector2i(-1, -1));
+    for(auto itr = _stonesPos.begin();itr!=_stonesPos.end();++itr)
+    result.push_back(*itr);
     return result;
 }
 
@@ -948,6 +956,10 @@ void World::Update(Snake &l_player, std::vector<SnakeBot> &bots ,std::vector<sf:
 
 void World::Render(sf::RenderWindow &window) {
     window.draw(_appleShape);
+    for(auto i = _stoneShape.begin();i!= _stoneShape.end();++i)
+    {
+        window.draw(*i);
+    }
 }
 
 int World::GetBlockSize() { return _blockSize; }
@@ -1003,5 +1015,6 @@ void Textbox::Render(sf::RenderWindow &l_wind) {
     l_wind.draw(_content);
     //}
 }
+
 
 //рахобраться с временем
