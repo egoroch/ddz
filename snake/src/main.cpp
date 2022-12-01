@@ -3,7 +3,7 @@
 
 int main() {
 
-    sf::Vector2u size(300, 300);
+    sf::Vector2u size(800, 600);
     std::string title = "snake";
     Window window(title, size, nullptr);
     window.setState(new MainMenu(&window));

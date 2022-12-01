@@ -132,6 +132,16 @@ void MainMenu::update(Window &window) {
     }
 };
 
+json MainMenu::getConfig(const std::string &fileName) {
+    std::ifstream inpFile(fileName);
+    if(!inpFile){
+        //возвращает default значения
+        return 1;
+    }
+
+    json config = json::parse(inpFile);
+}
+
 void Options::render(Window &window) {
     window.GetRendWindow()->clear();
     sf::Font font;

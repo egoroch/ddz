@@ -3,11 +3,15 @@
 #define DDZ_SNAKE_H
 
 #include <iostream>
+#include <fstream>
 #include "SFML/Graphics.hpp"
 #include "SFML/Window.hpp"
 #include "SFML/System.hpp"
+#include "../lib/single_include/nlohmann/json.hpp"
 #include "ctime"
 #include "iostream"
+
+using json=nlohmann::json;
 
 class Window;
 
@@ -64,10 +68,6 @@ public:
     virtual void update(Window &window) { _state->update(window); };
 
 };
-
-
-
-
 
 struct SnakeSegment{
     SnakeSegment(int x,int y) : position(x,y){}
@@ -329,6 +329,8 @@ public:
     void render(Window &window) override;
 
     void update(Window &window) override;
+
+    json getConfig(const std::string& fileName);
 private:
     Window* _window;
     sf::Text _title;
