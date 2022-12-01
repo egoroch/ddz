@@ -74,22 +74,15 @@ void Window::setState(State *st) {
 void MainMenu::render(Window &window) {
     window.GetRendWindow()->clear(sf::Color::Black);
     sf::Font font;
-    if (!font.loadFromFile("Textures/arial.ttf")) {
+    if (!font.loadFromFile("./Textures/arial.ttf")) {
         return;
     }
+    sf::Texture button;
+    button.loadFromFile("./picture/64/button.png");
 
     if(this->_isStart){
         sf::Text rounds = makeText("Count of rounds", font, {_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
         sf::Text bots = makeText("Count of bots", font, {_window->GetWindowSize().x/4.0f, 2.0f*_window->GetWindowSize().y/6.0f });
-
-        sf::Color grey(100,100,100);
-       /* sf::RectangleShape input[2];
-        for(size_t i = 0; i < 2; ++i) {
-            input[i].setSize({200, 50});
-            input[i].setOrigin({input[i].getSize().x/2, input[i].getSize().y/2});
-            input[i].setFillColor(grey);
-            input[i].setPosition({3.0f*_window->GetWindowSize().x/4.0f, (i*1+1)*_window->GetWindowSize().y/6.0f });
-        }*/
 
         _startGame->setFont(font);
         _startGame->setBackColor(sf::Color::Blue);
@@ -99,9 +92,7 @@ void MainMenu::render(Window &window) {
             _startGame->setBackColor(sf::Color::Red);
             _startGame->setTextColor(sf::Color::Green);
         }
-
-        //_window->GetRendWindow()->draw(input[0]);
-        //_window->GetRendWindow()->draw(input[1]);
+        _startGame->getButton().setTexture(&button);
         _window->GetRendWindow()->draw(rounds);
         _window->GetRendWindow()->draw(bots);
         _startGame->drawTo(*_window->GetRendWindow());
@@ -153,6 +144,8 @@ void MainMenu::render(Window &window) {
 
 void MainMenu::update(Window &window) {
     window.GetRendWindow()->clear();
+    int round = -1;
+    int bot = -1;
     sf::Event e;
     while (window.GetRendWindow()->pollEvent(e)) {
         if (e.Event::type == sf::Event::Closed)
@@ -170,7 +163,13 @@ void MainMenu::update(Window &window) {
         if (this->_startGame->isMouseOver(*window.GetRendWindow())) {
             if (e.type == sf::Event::MouseButtonPressed) {
                 std::cout << _textField->getString() << " " << _textFieldBots->getString();
-                window.setState(new Game(&window));
+                if(_textField->getString().size() == 0 || _textFieldBots->getString().size() == 0) {
+                    continue;
+                } else {
+                    round = std::stoi(_textField->getString());
+                    bot = std::stoi(_textFieldBots->getString());
+                    window.setState(new Game(&window, bot));
+                }
             }
         }
         if(e.type == sf::Event::MouseButtonReleased) {

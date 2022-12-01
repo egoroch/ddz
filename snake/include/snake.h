@@ -286,6 +286,10 @@ public:
 
         return mouseX < btnxPosWidth && mouseX > btnPosX && mouseY < btnyPosHeight && mouseY > btnPosY;
     }
+
+    sf::RectangleShape getButton(){
+        return _button;
+    }
 private:
     sf::RectangleShape _button;
     sf::Text _text;
@@ -362,7 +366,7 @@ public:
 private:
     unsigned int _size;
     sf::Font _font;
-    std::string _text;
+    std::string _text = "";
     sf::Text _inputText;
     sf::RectangleShape _rect;
     sf::Vector2f _position;
