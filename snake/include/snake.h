@@ -106,9 +106,10 @@ public:
     void Move();
     void Tick(std::vector<sf::Vector2i> items);
     void Render(sf::RenderWindow& l_window);
-private:
-    void CheckCollision(std::vector<sf::Vector2i> items);
 
+
+    void CheckCollision(std::vector<sf::Vector2i> items);
+private:
     SnakeContainer _snakeBody;
     int _size;
     Direction _dir;
@@ -120,13 +121,14 @@ private:
 
 class SnakeBot{
 public:
-    SnakeBot(int l_blockSize);
+    SnakeBot(int l_blockSize,sf::Vector2i headPos);
     SnakeBot() = default;
     ~SnakeBot();
 
+
     //methods
     void SetDirection(Direction l_dir);
-    void ChangeDirection(sf::Vector2i apple_pos ,std::vector<sf::Vector2i> items );
+    void ChangeDirection(sf::Vector2i apple_pos ,std::vector<sf::Vector2i> items,Direction player_dir );
     int GetSpeed();
     sf::Vector2i GetPosition();
     void SetPosition(sf::Vector2i l_pos);
@@ -136,14 +138,14 @@ public:
     void Lose();
 
     void Extend();
-    void Reset();
+    void Reset(sf::Vector2i headPos);
 
     void Move(sf::Vector2i apple_position);
-    void Tick(sf::Vector2i apple_position,std::vector<sf::Vector2i>);
+    void Tick(sf::Vector2i apple_position,std::vector<sf::Vector2i>,Direction player_dir);
     void Render(sf::RenderWindow& l_window);
-private:
-    void CheckCollision(std::vector<sf::Vector2i> items);
 
+    void CheckCollision(std::vector<sf::Vector2i> items);
+private:
     SnakeContainer _snakeBody;
     int _size;
     Direction _dir;
@@ -165,7 +167,7 @@ public:
 
     sf::Vector2i getApplePosition();
 
-    void Update(Snake& l_player,std::vector<SnakeBot>& bots);
+    void Update(Snake& l_player,std::vector<SnakeBot>& bots, std::vector<sf::Vector2i> items);
     void Render(sf::RenderWindow& window);
 
     std::vector<sf::Vector2i> get_world_items();
@@ -175,7 +177,10 @@ private:
     sf::Vector2i _item;
     int _blockSize;
     sf::CircleShape _appleShape;
-    std::vector<sf::Vector2i> allItems;
+    std::vector<sf::Vector2i> _stonesPos;
+   // sf::RectangleShape _stone;
+    std::vector<sf::RectangleShape> _stoneShape;
+
 };
 
 using MessageContainer = std::vector<std::string>;
@@ -214,7 +219,8 @@ private:
 public:
     Game();
 
-    explicit Game(Window *window);
+    std::vector<SnakeBot> CreateAllBots(Window *window,int blockSIze , std::vector<sf::Vector2i> items,int count);
+    explicit Game(Window *window , int count);
     sf::Time GetElapsed();
     void RestartClock();
     ~Game();
@@ -426,13 +432,6 @@ private:
     bool _isSettings = false;
     bool _isExit = false;
 };
-
-// в функицю collision передавать массив препятствий и позицию которую надо проверить
-//змейка будет смотреть +-1 во все стороны и отталкиваться от этого
-//можно передать в функцию collision все объекты (кроме яблока) и потом через указатели брать их положение (еще лучше сделать массив с ключами и смотеть по нему)
-//голова бота читает все препятсвия кроме головы игрока (свою голову с ней никогда не столкнется)
-//world get items пуст пока  . он нужен для стенок
-// в items  вхожят все объекты для столкновения т е кроме яблок
 
 
 

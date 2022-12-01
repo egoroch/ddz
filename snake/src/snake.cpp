@@ -66,17 +66,18 @@ bool Window::IsFullScreen() { return _isFullScreen; }
 
 
 void Window::setState(State *st) {
-   // if (_state != nullptr) delete _state;
+    // if (_state != nullptr) delete _state;
     _state = st;
     _state->setWindow(this);
 }
 
-void MainMenu::render(Window& window) {
+void MainMenu::render(Window &window) {
     window.GetRendWindow()->clear(sf::Color::Black);
     sf::Font font;
     if (!font.loadFromFile("Textures/arial.ttf")) {
         return;
     }
+
     if(this->_isStart){
         sf::Text rounds = makeText("Count of rounds", font, {_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
         sf::Text bots = makeText("Count of bots", font, {_window->GetWindowSize().x/4.0f, 2.0f*_window->GetWindowSize().y/6.0f });
@@ -162,6 +163,7 @@ void MainMenu::update(Window &window) {
             if (e.type == sf::Event::MouseButtonPressed)
                 window.GetRendWindow()->close();
         }
+
         if (this->_start->isMouseOver(*window.GetRendWindow()) && e.type == sf::Event::MouseButtonPressed) {
             this->_isStart = true;
         }
@@ -179,8 +181,8 @@ void MainMenu::update(Window &window) {
             _textField->handleInput(e);
             _textFieldBots->handleInput(e);
         }
-        if(this->_isSettings) {
-            if(e.type == sf::Event::MouseButtonPressed)
+        if (this->_isSettings) {
+            if (e.type == sf::Event::MouseButtonPressed)
                 window.setState(new Options(&window));
         }
     }
@@ -211,15 +213,15 @@ void Options::render(Window &window) {
     _back->setBackColor(sf::Color::Blue);
     _back->setTextColor(sf::Color::Yellow);
 
-    _save->setPosition({3.0f*window.GetWindowSize().x/4.0f, 7.0f*window.GetWindowSize().y/8.0f});
-    _back->setPosition({window.GetWindowSize().x/4.0f, 7.0f*window.GetWindowSize().y/8.0f});
+    _save->setPosition({3.0f * window.GetWindowSize().x / 4.0f, 7.0f * window.GetWindowSize().y / 8.0f});
+    _back->setPosition({window.GetWindowSize().x / 4.0f, 7.0f * window.GetWindowSize().y / 8.0f});
     this->_isSave = this->_save->isMouseOver(*_window->GetRendWindow());
     this->_isBack = this->_back->isMouseOver(*_window->GetRendWindow());
-    if(_isSave){
+    if (_isSave) {
         _save->setBackColor(sf::Color::Red);
         _save->setTextColor(sf::Color::Green);
     }
-    if(_isBack){
+    if (_isBack) {
         _back->setBackColor(sf::Color::Red);
         _back->setTextColor(sf::Color::Green);
     }
@@ -239,13 +241,13 @@ void Options::update(Window &window) {
             window.GetRendWindow()->close();
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
             window.GetRendWindow()->close();
-        if(this->_isSave) {
-            if(e.type == sf::Event::MouseButtonPressed)
+        if (this->_isSave) {
+            if (e.type == sf::Event::MouseButtonPressed)
                 //отправить данные в конфиг
                 window.setState(new MainMenu(&window));
         }
-        if(this->_isBack) {
-            if(e.type == sf::Event::MouseButtonPressed)
+        if (this->_isBack) {
+            if (e.type == sf::Event::MouseButtonPressed)
                 window.setState(new MainMenu(&window));
         }
     };
@@ -254,41 +256,55 @@ void Options::update(Window &window) {
 Game::Game() {
     _window = nullptr;
     _snake = Snake(0);
-    SnakeBot bot1 = SnakeBot(0);
+    SnakeBot bot1 = SnakeBot(0,sf::Vector2i(-1,-1));
     _bots.push_back(bot1);
     sf::Vector2u size(0, 0);
     _world = size;
-    _text.Setup(1,30,350,sf::Vector2f(225,0));
+    _text.Setup(1, 30, 350, sf::Vector2f(225, 0));
 }
 
-SnakeBot& Game::getSnakeBot(int i){
+SnakeBot &Game::getSnakeBot(int i) {
     return _bots[i];
 }
 
-Game::Game(Window *window) {
+Game::Game(Window *window , int countOfBots) {
     _window = window;
     _world = World(_window->GetWindowSize());
     _snake = Snake(_world.GetBlockSize());
-    _text.Setup(1,30,_window->GetWindowSize().x,sf::Vector2f(0,_window->GetWindowSize().y-50));
-    SnakeBot bot1 = SnakeBot(_world.GetBlockSize());
-    _bots.push_back(bot1);
+
+
+    std::vector<sf::Vector2i> res;
+    std::vector<sf::Vector2i> fromWorld = _world.get_world_items();
+    std::vector<sf::Vector2i> fromSnake = _snake.getBodySnake();
+    for (auto itr = fromWorld.begin(); itr < fromWorld.end(); ++itr) {
+        res.push_back(*itr);
+    }
+    for (auto itr = fromSnake.begin(); itr < fromSnake.end(); ++itr) {
+        res.push_back(*itr);
+    }
+
+    _text.Setup(1, 30, _window->GetWindowSize().x, sf::Vector2f(0, _window->GetWindowSize().y - 50));
+    _bots = this->CreateAllBots(window,_world.GetBlockSize(),res,countOfBots);
+    //SnakeBot bot1 = SnakeBot(_world.GetBlockSize(),sf::Vector2i(14,7));
+    //SnakeBot bot2 = SnakeBot(_world.GetBlockSize());
+   // _bots.push_back(bot1);
+    //_bots.push_back(bot2);
 }
 
-std::vector<sf::Vector2i> Game::get_game_items(){
+std::vector<sf::Vector2i> Game::get_game_items() {
     std::vector<sf::Vector2i> res;
-    std::vector<sf::Vector2i>  fromWorld = _world.get_world_items();
-    std::vector<sf::Vector2i>  fromSnake = _snake.getBodySnake();
+    std::vector<sf::Vector2i> fromWorld = _world.get_world_items();
+    std::vector<sf::Vector2i> fromSnake = _snake.getBodySnake();
     //   sizeof(arr)/sizeof(arr[0]);
-    for(auto itr = fromWorld.begin();itr<fromWorld.end();++itr){
+    for (auto itr = fromWorld.begin(); itr < fromWorld.end(); ++itr) {
         res.push_back(*itr);
     }
-    for(auto itr = fromSnake.begin();itr<fromSnake.end();++itr){
+    for (auto itr = fromSnake.begin(); itr < fromSnake.end(); ++itr) {
         res.push_back(*itr);
     }
-    for (auto itr = _bots.begin();itr != _bots.end();++itr)
-    {
-        std::vector<sf::Vector2i>  fromBot = itr->getBodySnake();
-        for(auto pointer = fromBot.begin();pointer != fromBot.end();++pointer){
+    for (auto itr = _bots.begin(); itr != _bots.end(); ++itr) {
+        std::vector<sf::Vector2i> fromBot = itr->getBodySnake();
+        for (auto pointer = fromBot.begin(); pointer != fromBot.end(); ++pointer) {
             res.push_back(*pointer);
         }
     }
@@ -305,7 +321,8 @@ void Game::render(Window &window) {
     window.GetRendWindow()->clear();
     _world.Render(*_window->GetRendWindow());
     _snake.Render(*_window->GetRendWindow());
-    _bots[0].Render(*_window->GetRendWindow());
+    for(auto itr = _bots.begin();itr != _bots.end();++itr)
+    itr->Render(*_window->GetRendWindow());
     _text.Add(std::to_string(_snake.GetScore()));
     _text.Render(*_window->GetRendWindow());
     _window->GetRendWindow()->display();
@@ -343,21 +360,57 @@ void Game::update(Window &window) {
 
         std::vector<sf::Vector2i> allItems = this->get_game_items();
         _snake.Tick(allItems);
-        _bots[0].Tick(_world.getApplePosition(),allItems);
+            for (auto itr = _bots.begin() + 1; itr != _bots.end(); ++itr)
+                itr->Tick(_world.getApplePosition(), allItems, _snake.GetDirection());
+            _bots.begin()->Tick(sf::Vector2i(_snake.GetPosition().x + 2, _snake.GetPosition().y), allItems,
+                                _snake.GetDirection());
+            allItems = this->get_game_items();
+        for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
+        itr->CheckCollision(allItems);
+        _snake.CheckCollision(allItems);
+        //_bots[0].ChangeDirection(this->_world.getApplePostition());
 
-        //_bots[0].ChangeDirection(this->_world.getApplePosition());
-
-        _world.Update(_snake,_bots);
+        _world.Update(_snake, _bots, allItems);
         _elapsed -= sf::seconds(timestepMainSnake);
         if (_snake.HasLost()) {
             _snake.Reset();
         }
-        if (_bots[0].HasLost()) {
-             _bots[0].Disappear();
+        for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
+        if (itr->HasLost()) {
+            itr->Disappear();
         }
-  }
+    }
     this->RestartClock();
 };
+
+std::vector<SnakeBot> Game::CreateAllBots(Window *window ,int blockSIze , std::vector<sf::Vector2i> items, int count){
+    std::vector<SnakeBot> res;
+    int maxX = (window->GetWindowSize().x / blockSIze);
+    int maxY = (window->GetWindowSize().y / blockSIze);
+    sf::Vector2i head;
+    //head = sf::Vector2i(rand() % maxX, rand() % (maxY-3));
+
+    for(int i = 0 ; i<count;++i)
+    {   int Check = -1;
+        while(Check != 0) {
+            Check++;
+            head = sf::Vector2i(rand() % maxX, (rand() % (maxY - 3)) + 3);
+
+            for (auto itr = items.begin(); itr != items.end(); ++itr) {
+                if ((itr->x == head.x) && ((itr->y == head.y) || (itr->y == (head.y - 1)) || (itr->y == head.y - 2))) {
+                    Check++;
+                }
+
+            }
+        }
+        items.push_back(sf::Vector2i(head.x,head.y));
+        items.push_back(sf::Vector2i(head.x,head.y-1));
+        items.push_back(sf::Vector2i(head.x,head.y-2));
+
+        res.push_back(SnakeBot(blockSIze,head));
+    }
+    return res;
+}
 
 
 Snake::Snake(int l_blockSize) {
@@ -381,11 +434,10 @@ void Snake::Reset() {
     _lost = false;
 }
 
-std::vector<sf::Vector2i> Snake::getBodySnake(){
+std::vector<sf::Vector2i> Snake::getBodySnake() {
     std::vector<sf::Vector2i> res;
-    for (auto itr = _snakeBody.begin() ; itr != _snakeBody.end(); ++itr)
-    {
-        res.push_back(sf::Vector2i(itr->position.x,itr->position.y));
+    for (auto itr = _snakeBody.begin(); itr != _snakeBody.end(); ++itr) {
+        res.push_back(sf::Vector2i(itr->position.x, itr->position.y));
     }
     return res;
 }
@@ -458,18 +510,17 @@ void Snake::Tick(std::vector<sf::Vector2i> items) {
     if (_snakeBody.empty()) { return; }
     if (_dir == Direction::None) { return; }
     Move();
-    CheckCollision(items);
+    // CheckCollision(items);
 }
 
-Direction Snake::GetPhysicalDirection()
-{
-    SnakeSegment& head = _snakeBody[0];
-    SnakeSegment& shoulder = _snakeBody[1];
+Direction Snake::GetPhysicalDirection() {
+    SnakeSegment &head = _snakeBody[0];
+    SnakeSegment &shoulder = _snakeBody[1];
 
-    if(head.position.x == shoulder.position.x)
-        return (head.position.y > shoulder.position.y ? Direction::Down : Direction::Up );
-    if(head.position.y == shoulder.position.y)
-        return (head.position.x > shoulder.position.x ? Direction::Right : Direction::Left );
+    if (head.position.x == shoulder.position.x)
+        return (head.position.y > shoulder.position.y ? Direction::Down : Direction::Up);
+    if (head.position.y == shoulder.position.y)
+        return (head.position.x > shoulder.position.x ? Direction::Right : Direction::Left);
 
 }
 
@@ -492,9 +543,13 @@ void Snake::Move() {
 
 void Snake::CheckCollision(std::vector<sf::Vector2i> items) {
     //if (_snakeBody.size() < 5) { return; }
-     auto head = _snakeBody.begin();
-    for (auto itr = items.begin() ; itr != items.end(); ++itr) {
+    auto head = _snakeBody.begin();
+    int CountMatches = 0;
+    for (auto itr = items.begin(); itr != items.end(); ++itr) {
         if (*itr == head->position) {
+            CountMatches++;
+        }
+        if (2 == CountMatches) {
             Lose();
             break;
         }
@@ -516,20 +571,20 @@ void Snake::Render(sf::RenderWindow &l_window) {
     }
 }
 
-SnakeBot::SnakeBot(int l_blockSize){
+SnakeBot::SnakeBot(int l_blockSize,sf::Vector2i headPos) {
     _size = l_blockSize;
     _bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
-    Reset();
+    Reset(headPos);
 }
 
 SnakeBot::~SnakeBot() {}
 
-void SnakeBot::Reset() {
+void SnakeBot::Reset(sf::Vector2i headPos) {
     _snakeBody.clear();
 
-    _snakeBody.push_back(SnakeSegment(14, 5));
-    _snakeBody.push_back(SnakeSegment(14, 6));
-    _snakeBody.push_back(SnakeSegment(14, 7));
+    _snakeBody.push_back(SnakeSegment(headPos.x, headPos.y-2));
+    _snakeBody.push_back(SnakeSegment(headPos.x, headPos.y-1));
+    _snakeBody.push_back(SnakeSegment(headPos.x, headPos.y));
 
     SetDirection(Direction::Down);
     _speed = 15;
@@ -538,71 +593,216 @@ void SnakeBot::Reset() {
 
 void SnakeBot::SetDirection(Direction l_dir) { _dir = l_dir; }
 
-std::vector<sf::Vector2i> SnakeBot::getBodySnake(){
+std::vector<sf::Vector2i> SnakeBot::getBodySnake() {
     std::vector<sf::Vector2i> res;
-    for (auto itr = _snakeBody.begin() ; itr != _snakeBody.end(); ++itr)
-    {
-        res.push_back(sf::Vector2i(itr->position.x,itr->position.y));
+    for (auto itr = _snakeBody.begin(); itr != _snakeBody.end(); ++itr) {
+        res.push_back(sf::Vector2i(itr->position.x, itr->position.y));
     }
     return res;
 }
 
-void SnakeBot::ChangeDirection(sf::Vector2i apple_position, std::vector<sf::Vector2i> items) {
+void SnakeBot::ChangeDirection(sf::Vector2i apple_position, std::vector<sf::Vector2i> items ,Direction player_dir) {
     bool DangerLeft = false;
     bool DangerRight = false;
     bool DangerUp = false;
-    bool DangerFalse = false;
-   // for(auto itr = items.begin(); itr!=items.end();++itr )
-    //{
-      //  if(items == )
-    //}
+    bool DangerDown = false;
+    for (auto itr = items.begin(); itr != items.end(); ++itr) {
+        if (*itr == sf::Vector2i(GetPosition().x + 1, GetPosition().y)) {
+            DangerRight = true;
+        }
+        if (*itr == sf::Vector2i(GetPosition().x - 1, GetPosition().y)) {
+            DangerLeft = true;
+        }
+        if (*itr == sf::Vector2i(GetPosition().x, GetPosition().y + 1)) {
+            DangerDown = true;
+        }
+        if (*itr == sf::Vector2i(GetPosition().x, GetPosition().y - 1)) {
+            DangerUp = true;
+        }
+    }
     int posX = this->GetPosition().x;
     int posY = this->GetPosition().y;
     int posAppleX = apple_position.x;
     int posAppleY = apple_position.y;
-    double distance =0;
-    double caseUp = abs(posX*posX-posAppleX*posAppleX) + abs((posY-1)*(posY-1)-posAppleY*posAppleY);
-    double caseDown = abs(posX*posX-posAppleX*posAppleX) + abs((posY+1)*(posY+1)-posAppleY*posAppleY);
-    double caseRight = abs((posX+1)*(posX+1)-posAppleX*posAppleX) + abs((posY)*(posY)-posAppleY*posAppleY);
-    double caseLeft = abs((posX-1)*(posX-1)-posAppleX*posAppleX) + abs((posY)*(posY)-posAppleY*posAppleY);
+    double distance = 0;
+    double caseUp = abs(posX * posX - posAppleX * posAppleX) + abs((posY - 1) * (posY - 1) - posAppleY * posAppleY);
+    double caseDown = abs(posX * posX - posAppleX * posAppleX) + abs((posY + 1) * (posY + 1) - posAppleY * posAppleY);
+    double caseRight =
+            abs((posX + 1) * (posX + 1) - posAppleX * posAppleX) + abs((posY) * (posY) - posAppleY * posAppleY);
+    double caseLeft =
+            abs((posX - 1) * (posX - 1) - posAppleX * posAppleX) + abs((posY) * (posY) - posAppleY * posAppleY);
     if (_dir == Direction::Left) {
-        distance = caseLeft;
-        if (caseLeft <= caseUp && caseLeft<=caseDown) {
+        if (caseLeft <= caseUp && caseLeft <= caseDown) {
+            this->SetDirection(Direction::Left);
+            if (DangerLeft) {
+                if (caseUp <= caseDown) {
+                    this->SetDirection(Direction::Up);
+                    if (DangerUp) { this->SetDirection(Direction::Down); }
+                }
+                if (caseDown <= caseUp) {
+                    this->SetDirection(Direction::Down);
+                    if (DangerDown) { this->SetDirection(Direction::Up); }
+                }
+            }
         }
-        if (caseUp <= caseLeft && caseUp<=caseDown) {
+
+        if (caseUp <= caseLeft && caseUp <= caseDown) {
             this->SetDirection(Direction::Up);
+            if (DangerUp) {
+                if (caseLeft <= caseDown) {
+                    this->SetDirection(Direction::Left);
+                    if (DangerLeft) { this->SetDirection(Direction::Down); }
+                }
+                if (caseDown <= caseLeft) {
+                    this->SetDirection(Direction::Down);
+                    if (DangerDown) { this->SetDirection(Direction::Left); }
+                }
+            }
+
         }
-        if (caseDown <= caseLeft && caseDown<=caseUp) {
+
+        if (caseDown <= caseLeft && caseDown <= caseUp) {
             this->SetDirection(Direction::Down);
+            if (DangerDown) {
+                if (caseLeft <= caseUp) {
+                    this->SetDirection(Direction::Left);
+                    if (DangerLeft) { this->SetDirection(Direction::Up); }
+                }
+                if (caseUp <= caseLeft) {
+                    this->SetDirection(Direction::Up);
+                    if (DangerUp) { this->SetDirection(Direction::Left); }
+                }
+            }
         }
 
     } else if (_dir == Direction::Right) {
-        if (caseRight<= caseUp && caseRight<=caseDown) {
-        }
-        if (caseUp <= caseRight && caseUp<=caseDown) {
-            this->SetDirection(Direction::Up);
-        }
-        if (caseDown <= caseRight && caseDown<=caseUp) {
-            this->SetDirection(Direction::Down);
-        }
-    } else if (_dir == Direction::Up) {
-        if (caseUp<= caseRight && caseUp<=caseLeft) {
-        }
-        if (caseRight <= caseUp && caseRight<=caseLeft) {
+        if (caseRight <= caseUp && caseRight <= caseDown) {
             this->SetDirection(Direction::Right);
-        }
-        if (caseLeft <= caseRight && caseLeft<=caseUp) {
-            this->SetDirection(Direction::Left);
+            if (DangerRight) {
+                if (caseUp <= caseDown) {
+                    this->SetDirection(Direction::Up);
+                    if (DangerUp) { this->SetDirection(Direction::Down); }
+                }
+                if (caseDown <= caseUp) {
+                    this->SetDirection(Direction::Down);
+                    if (DangerDown) { this->SetDirection(Direction::Up); }
+                }
+            }
         }
 
-    } else if (_dir == Direction::Down) {
-        if (caseDown<= caseRight && caseDown<=caseLeft) {
+        if (caseUp <= caseRight && caseUp <= caseDown) {
+            this->SetDirection(Direction::Up);
+            if (DangerUp) {
+                if (caseRight <= caseDown) {
+                    this->SetDirection(Direction::Right);
+                    if (DangerRight) { this->SetDirection(Direction::Down); }
+                }
+                if (caseDown <= caseRight) {
+                    this->SetDirection(Direction::Down);
+                    if (DangerDown) { this->SetDirection(Direction::Right); }
+                }
+            }
+
         }
-        if (caseRight <= caseDown && caseRight<=caseLeft) {
+
+        if (caseDown <= caseRight && caseDown <= caseUp) {
+            this->SetDirection(Direction::Down);
+            if (DangerDown) {
+                if (caseRight <= caseUp) {
+                    this->SetDirection(Direction::Right);
+                    if (DangerRight) { this->SetDirection(Direction::Up); }
+                }
+                if (caseUp <= caseRight) {
+                    this->SetDirection(Direction::Up);
+                    if (DangerUp) { this->SetDirection(Direction::Right); }
+                }
+            }
+        }
+    } else if (_dir == Direction::Up) {
+        if (caseRight <= caseUp && caseRight <= caseLeft) {
             this->SetDirection(Direction::Right);
+            if (DangerRight) {
+                if (caseUp <= caseLeft) {
+                    this->SetDirection(Direction::Up);
+                    if (DangerUp) { this->SetDirection(Direction::Left); }
+                }
+                if (caseLeft <= caseUp) {
+                    this->SetDirection(Direction::Left);
+                    if (DangerLeft) { this->SetDirection(Direction::Up); }
+                }
+            }
         }
-        if (caseLeft <= caseRight && caseLeft<=caseDown) {
+
+        if (caseUp <= caseRight && caseUp <= caseLeft) {
+            this->SetDirection(Direction::Up);
+            if (DangerUp) {
+                if (caseRight <= caseLeft) {
+                    this->SetDirection(Direction::Right);
+                    if (DangerRight) { this->SetDirection(Direction::Left); }
+                }
+                if (caseLeft <= caseRight) {
+                    this->SetDirection(Direction::Left);
+                    if (DangerLeft) { this->SetDirection(Direction::Right); }
+                }
+            }
+
+        }
+
+        if (caseLeft <= caseRight && caseLeft <= caseUp) {
             this->SetDirection(Direction::Left);
+            if (DangerLeft) {
+                if (caseRight <= caseUp) {
+                    this->SetDirection(Direction::Right);
+                    if (DangerRight) { this->SetDirection(Direction::Up); }
+                }
+                if (caseUp <= caseRight) {
+                    this->SetDirection(Direction::Up);
+                    if (DangerUp) { this->SetDirection(Direction::Right); }
+                }
+            }
+        }
+    } else if (_dir == Direction::Down) {
+        if (caseRight <= caseDown && caseRight <= caseLeft) {
+            this->SetDirection(Direction::Right);
+            if (DangerRight) {
+                if (caseDown <= caseLeft) {
+                    this->SetDirection(Direction::Down);
+                    if (DangerDown) { this->SetDirection(Direction::Left); }
+                }
+                if (caseLeft <= caseDown) {
+                    this->SetDirection(Direction::Left);
+                    if (DangerLeft) { this->SetDirection(Direction::Down); }
+                }
+            }
+        }
+
+        if (caseDown <= caseRight && caseDown <= caseLeft) {
+            this->SetDirection(Direction::Down);
+            if (DangerDown) {
+                if (caseRight <= caseLeft) {
+                    this->SetDirection(Direction::Right);
+                    if (DangerRight) { this->SetDirection(Direction::Left); }
+                }
+                if (caseLeft <= caseRight) {
+                    this->SetDirection(Direction::Left);
+                    if (DangerLeft) { this->SetDirection(Direction::Right); }
+                }
+            }
+
+        }
+
+        if (caseLeft <= caseRight && caseLeft <= caseDown) {
+            this->SetDirection(Direction::Left);
+            if (DangerLeft) {
+                if (caseRight <= caseDown) {
+                    this->SetDirection(Direction::Right);
+                    if (DangerRight) { this->SetDirection(Direction::Down); }
+                }
+                if (caseDown <= caseRight) {
+                    this->SetDirection(Direction::Down);
+                    if (DangerDown) { this->SetDirection(Direction::Right); }
+                }
+            }
         }
     }
 }
@@ -663,12 +863,13 @@ void SnakeBot::Extend() {
     }
 }
 
-void SnakeBot::Tick(sf::Vector2i apple_position, std::vector<sf::Vector2i> items) {
+void SnakeBot::Tick(sf::Vector2i apple_position, std::vector<sf::Vector2i> items,Direction player_dir) {
     if (_snakeBody.empty()) { return; }
-    if (_dir == Direction::None) { return; }
-    this->ChangeDirection(apple_position, items);
-    Move(apple_position);
-    CheckCollision(items);
+    if (player_dir == Direction::None) {
+        return; }
+    this->ChangeDirection(apple_position, items,player_dir);
+        Move(apple_position);
+    //CheckCollision(items);//CheckCollision(items);
 }
 
 void SnakeBot::Move(sf::Vector2i apple_position) {
@@ -677,23 +878,28 @@ void SnakeBot::Move(sf::Vector2i apple_position) {
     }
 
     if (_dir == Direction::Left) {
-            --_snakeBody[0].position.x;
+        --_snakeBody[0].position.x;
     } else if (_dir == Direction::Right) {
-            ++_snakeBody[0].position.x;
+        ++_snakeBody[0].position.x;
     } else if (_dir == Direction::Up) {
-            --_snakeBody[0].position.y;
+        --_snakeBody[0].position.y;
     } else if (_dir == Direction::Down) {
-            ++_snakeBody[0].position.y;
-        }
+        ++_snakeBody[0].position.y;
+    }
 }
-void SnakeBot::Disappear(){
+
+void SnakeBot::Disappear() {
     _snakeBody.clear();
 }
 
 void SnakeBot::CheckCollision(std::vector<sf::Vector2i> items) {
     auto head = _snakeBody.begin();
-    for (auto itr = items.begin() ; itr != items.end(); ++itr) {
+    int CountMatches = 0;
+    for (auto itr = items.begin(); itr != items.end(); ++itr) {
         if (*itr == head->position) {
+            CountMatches++;
+        }
+        if (CountMatches == 2) {
             Lose();
             break;
         }
@@ -716,26 +922,48 @@ void SnakeBot::Render(sf::RenderWindow &l_window) {
 }
 
 World::World(const sf::Vector2u &l_windSize) {
-    _blockSize = 16;
+    _blockSize = 32;
     _windowSize.y = l_windSize.y - 50;
-    _windowSize.x = l_windSize.x ;
+    _windowSize.x = l_windSize.x;
     RespawnApple();
     _appleShape.setFillColor(sf::Color::Red);
     _appleShape.setRadius(_blockSize / 2);
+    //_______________________
+    std::vector<sf::Vector2i> stonesPos;
+    std::vector<sf::RectangleShape> stones;
+    srand(unsigned(time(0)));
+    int countOfStones = 5+ (rand() % 7);
+    int maxX = (_windowSize.x / _blockSize);
+    int maxY = (_windowSize.y / _blockSize);
+    for (int i=0;i<countOfStones;++i){
+        stonesPos.push_back(sf::Vector2i( rand() % maxX, rand() % maxY));
+        stones.push_back(sf::RectangleShape());
+        stones[i].setPosition(stonesPos[i].x*_blockSize,stonesPos[i].y*_blockSize);
+        stones[i].setFillColor(sf::Color::Blue);
+        stones[i].setSize(sf::Vector2f(_blockSize,_blockSize));
+    }
+    _stonesPos = stonesPos;
+    _stoneShape = stones;
+    //_________________
+    //  std::vector<sf::Vector2i> _allStones;
+    //    sf::RectangleShape _stone;
+    //обновить добавление ов все айтемы для мтолкнований
 }
 
 World::~World() {}
 
 
-std::vector<sf::Vector2i> World::get_world_items(){
+std::vector<sf::Vector2i> World::get_world_items() {
     std::vector<sf::Vector2i> result;
-    result.push_back(sf::Vector2i(-1,-1));
+    for(auto itr = _stonesPos.begin();itr!=_stonesPos.end();++itr)
+    result.push_back(*itr);
     return result;
 }
 
 void World::RespawnApple() {
     int maxX = (_windowSize.x / _blockSize);
     int maxY = (_windowSize.y / _blockSize);
+    srand(unsigned(time(0)));
     _item = sf::Vector2i(
             rand() % maxX, rand() % maxY);
     _appleShape.setPosition(
@@ -743,19 +971,19 @@ void World::RespawnApple() {
             _item.y * _blockSize);
 }
 
-sf::Vector2i World::getApplePosition(){
+sf::Vector2i World::getApplePosition() {
     return _item;
 }
 
-void World::Update(Snake &l_player,std::vector<SnakeBot> &bots) {
+void World::Update(Snake &l_player, std::vector<SnakeBot> &bots ,std::vector<sf::Vector2i> items) {
     if (l_player.GetPosition() == _item) {
         l_player.Extend();
         l_player.IncreaseScore();
         RespawnApple();
     }
-
-    if (bots[0].GetPosition() == _item) {
-        bots[0].Extend();
+    for (auto itr = bots.begin(); itr != bots.end(); ++itr)
+    if (itr->GetPosition() == _item) {
+        itr->Extend();
         RespawnApple();
 
     }
@@ -763,27 +991,27 @@ void World::Update(Snake &l_player,std::vector<SnakeBot> &bots) {
     //bots[0].ChangeDirection(_item);
     int gridSize_x = _windowSize.x / _blockSize;
     int gridSize_y = _windowSize.y / _blockSize;
-
-    if (bots[0].GetPosition().x == -1) {
-        bots[0].SetPosition(sf::Vector2i( gridSize_x-1, bots[0].GetPosition().y));
+    for (auto itr = bots.begin(); itr != bots.end(); ++itr) {
+        if (itr->GetPosition().x == -1) {
+            itr->SetPosition(sf::Vector2i(gridSize_x - 1, itr->GetPosition().y));
+        }
+        if (itr->GetPosition().y == -1) {
+            itr->SetPosition(sf::Vector2i(itr->GetPosition().x, gridSize_y - 1));
+        }
+        if (itr->GetPosition().y == gridSize_y) {
+            itr->SetPosition(sf::Vector2i(itr->GetPosition().x, 0));
+        }
+        if (itr->GetPosition().x == gridSize_x) {
+            itr->SetPosition(sf::Vector2i(0, itr->GetPosition().y));
+        }
     }
-    if (bots[0].GetPosition().y == -1) {
-        bots[0].SetPosition(sf::Vector2i(bots[0].GetPosition().x, gridSize_y-1));
-    }
-    if (bots[0].GetPosition().y == gridSize_y) {
-        bots[0].SetPosition(sf::Vector2i(bots[0].GetPosition().x, 0));
-    }
-    if (bots[0].GetPosition().x == gridSize_x) {
-        bots[0].SetPosition(sf::Vector2i(0, bots[0].GetPosition().y));
-    }
-
-    //_________________
+    //___
 
     if (l_player.GetPosition().x == -1) {
-        l_player.SetPosition(sf::Vector2i( gridSize_x-1, l_player.GetPosition().y));
+        l_player.SetPosition(sf::Vector2i(gridSize_x - 1, l_player.GetPosition().y));
     }
     if (l_player.GetPosition().y == -1) {
-        l_player.SetPosition(sf::Vector2i(l_player.GetPosition().x, gridSize_y-1));
+        l_player.SetPosition(sf::Vector2i(l_player.GetPosition().x, gridSize_y - 1));
     }
     if (l_player.GetPosition().y == gridSize_y) {
         l_player.SetPosition(sf::Vector2i(l_player.GetPosition().x, 0));
@@ -795,6 +1023,10 @@ void World::Update(Snake &l_player,std::vector<SnakeBot> &bots) {
 
 void World::Render(sf::RenderWindow &window) {
     window.draw(_appleShape);
+    for(auto i = _stoneShape.begin();i!= _stoneShape.end();++i)
+    {
+        window.draw(*i);
+    }
 }
 
 int World::GetBlockSize() { return _blockSize; }
@@ -803,33 +1035,37 @@ sf::Time Game::GetElapsed() { return _elapsed; }
 
 void Game::RestartClock() { _elapsed += _clock.restart(); }
 
-Textbox::Textbox() {Setup(5,9,200,sf::Vector2f(0,0));}
+Textbox::Textbox() { Setup(5, 9, 200, sf::Vector2f(0, 0)); }
+
 Textbox::Textbox(int l_visible, int l_charSize, int l_width, sf::Vector2f l_screenPos) {
-    Setup(l_visible,l_charSize,l_width,l_screenPos);
+    Setup(l_visible, l_charSize, l_width, l_screenPos);
 }
-Textbox::~Textbox(){Clear();}
+
+Textbox::~Textbox() { Clear(); }
 
 void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_screenPos) {
     _numVisible = l_visible;
 
-    sf::Vector2f offset(2.0f,2.0f);
+    sf::Vector2f offset(2.0f, 2.0f);
 
     _font.loadFromFile("Textures/arial.ttf");
     _content.setFont(_font);
     _content.setString("score::");
     _content.setCharacterSize(l_charSize);
+
     _content.setFillColor(sf::Color::White);
     _content.setPosition(l_screenPos+offset);
 
-    _backdrop.setSize(sf::Vector2f(l_width,(l_visible*(l_charSize*1.2f))));
-    _backdrop.setFillColor(sf::Color(90,90,90,90));
+
+    _backdrop.setSize(sf::Vector2f(l_width, (l_visible * (l_charSize * 1.2f))));
+    _backdrop.setFillColor(sf::Color(90, 90, 90, 90));
     _backdrop.setPosition(l_screenPos);
 }
 
 void Textbox::Add(std::string l_message) {
-    l_message = "score: "+l_message;
+    l_message = "score: " + l_message;
     _messages.push_back(l_message);
-    if(_messages.size()<2){return; }
+    if (_messages.size() < 2) { return; }
     _messages.erase(_messages.begin());
 }
 
@@ -837,16 +1073,17 @@ void Textbox::Clear() {
     _messages.clear();
 }
 
-void Textbox::Render(sf::RenderWindow& l_wind){
+void Textbox::Render(sf::RenderWindow &l_wind) {
     std::string l_content;
-    for(auto &itr : _messages){
-        l_content.append(itr+" ");
+    for (auto &itr: _messages) {
+        l_content.append(itr + " ");
     }
-   // if(l_content != "") {
-        _content.setString(l_content);
-        l_wind.draw(_backdrop);
-        l_wind.draw(_content);
+    // if(l_content != "") {
+    _content.setString(l_content);
+    l_wind.draw(_backdrop);
+    l_wind.draw(_content);
     //}
 }
+
 
 //рахобраться с временем
