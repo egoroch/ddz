@@ -80,7 +80,7 @@ enum class Direction {None,Up,Down,Left,Right};
 
 class Snake{
 public:
-    Snake(int l_blockSize);
+    Snake(int l_blockSize,bool is_multy);
     Snake() = default;
     ~Snake();
 
@@ -99,7 +99,7 @@ public:
     void Lose();
 
     void Extend();
-    void Reset();
+    void Reset(bool is_multy);
 
     void Move();
     void Tick(std::vector<sf::Vector2i> items);
@@ -165,7 +165,7 @@ public:
 
     sf::Vector2i getApplePosition();
 
-    void Update(Snake& l_player,std::vector<SnakeBot>& bots, std::vector<sf::Vector2i> items);
+    void Update(Snake& l_player,Snake &secondPlayer,std::vector<SnakeBot>& bots, std::vector<sf::Vector2i> items);
     void Render(sf::RenderWindow& window);
 
     std::vector<sf::Vector2i> get_world_items();
@@ -208,6 +208,8 @@ private:
     Window *_window;
     World _world;
     Snake _snake;
+    Snake _player2_snake;
+    bool _is_multiplayer;
     sf::Clock _clock;
     sf::Time _elapsed;
     Textbox _text;
@@ -218,7 +220,7 @@ public:
     Game();
 
     std::vector<SnakeBot> CreateAllBots(Window *window,int blockSIze , std::vector<sf::Vector2i> items,int count);
-    explicit Game(Window *window , int count);
+    explicit Game(Window *window , int count,bool is_multiplayer);
     sf::Time GetElapsed();
     void RestartClock();
     ~Game();
