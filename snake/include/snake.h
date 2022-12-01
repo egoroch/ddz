@@ -126,7 +126,7 @@ public:
 
     //methods
     void SetDirection(Direction l_dir);
-    void ChangeDirection(sf::Vector2i apple_pos ,std::vector<sf::Vector2i> items );
+    void ChangeDirection(sf::Vector2i apple_pos ,std::vector<sf::Vector2i> items,Direction player_dir );
     int GetSpeed();
     sf::Vector2i GetPosition();
     void SetPosition(sf::Vector2i l_pos);
@@ -139,7 +139,7 @@ public:
     void Reset(sf::Vector2i headPos);
 
     void Move(sf::Vector2i apple_position);
-    void Tick(sf::Vector2i apple_position,std::vector<sf::Vector2i>);
+    void Tick(sf::Vector2i apple_position,std::vector<sf::Vector2i>,Direction player_dir);
     void Render(sf::RenderWindow& l_window);
 
     void CheckCollision(std::vector<sf::Vector2i> items);

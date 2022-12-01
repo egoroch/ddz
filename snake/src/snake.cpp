@@ -293,14 +293,15 @@ void Game::update(Window &window) {
 
         std::vector<sf::Vector2i> allItems = this->get_game_items();
         _snake.Tick(allItems);
-        for (auto itr = _bots.begin()+1; itr != _bots.end(); ++itr)
-        itr->Tick(_world.getApplePosition(), allItems);
-            _bots.begin()->Tick(sf::Vector2i (_snake.GetPosition().x+2,_snake.GetPosition().y), allItems);
-        allItems = this->get_game_items();
+            for (auto itr = _bots.begin() + 1; itr != _bots.end(); ++itr)
+                itr->Tick(_world.getApplePosition(), allItems, _snake.GetDirection());
+            _bots.begin()->Tick(sf::Vector2i(_snake.GetPosition().x + 2, _snake.GetPosition().y), allItems,
+                                _snake.GetDirection());
+            allItems = this->get_game_items();
         for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
         itr->CheckCollision(allItems);
         _snake.CheckCollision(allItems);
-        //_bots[0].ChangeDirection(this->_world.getApplePosition());
+        //_bots[0].ChangeDirection(this->_world.getApplePostition());
 
         _world.Update(_snake, _bots, allItems);
         _elapsed -= sf::seconds(timestepMainSnake);
@@ -533,7 +534,7 @@ std::vector<sf::Vector2i> SnakeBot::getBodySnake() {
     return res;
 }
 
-void SnakeBot::ChangeDirection(sf::Vector2i apple_position, std::vector<sf::Vector2i> items) {
+void SnakeBot::ChangeDirection(sf::Vector2i apple_position, std::vector<sf::Vector2i> items ,Direction player_dir) {
     bool DangerLeft = false;
     bool DangerRight = false;
     bool DangerUp = false;
@@ -795,12 +796,13 @@ void SnakeBot::Extend() {
     }
 }
 
-void SnakeBot::Tick(sf::Vector2i apple_position, std::vector<sf::Vector2i> items) {
+void SnakeBot::Tick(sf::Vector2i apple_position, std::vector<sf::Vector2i> items,Direction player_dir) {
     if (_snakeBody.empty()) { return; }
-    if (_dir == Direction::None) { return; }
-    this->ChangeDirection(apple_position, items);
-    Move(apple_position);
-    //CheckCollision(items);
+    if (player_dir == Direction::None) {
+        return; }
+    this->ChangeDirection(apple_position, items,player_dir);
+        Move(apple_position);
+    //CheckCollision(items);//CheckCollision(items);
 }
 
 void SnakeBot::Move(sf::Vector2i apple_position) {
