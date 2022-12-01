@@ -123,7 +123,7 @@ void MainMenu::update(Window &window) {
         }
         if (this->_isStart) {
             if (e.type == sf::Event::MouseButtonPressed)
-                window.setState(new Game(&window,2));
+                window.setState(new Game(&window,4));
         }
         if (this->_isSettings) {
             if (e.type == sf::Event::MouseButtonPressed)
