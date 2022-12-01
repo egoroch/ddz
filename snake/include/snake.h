@@ -119,9 +119,10 @@ private:
 
 class SnakeBot{
 public:
-    SnakeBot(int l_blockSize);
+    SnakeBot(int l_blockSize,sf::Vector2i headPos);
     SnakeBot() = default;
     ~SnakeBot();
+
 
     //methods
     void SetDirection(Direction l_dir);
@@ -135,7 +136,7 @@ public:
     void Lose();
 
     void Extend();
-    void Reset();
+    void Reset(sf::Vector2i headPos);
 
     void Move(sf::Vector2i apple_position);
     void Tick(sf::Vector2i apple_position,std::vector<sf::Vector2i>);
@@ -164,7 +165,7 @@ public:
 
     sf::Vector2i getApplePosition();
 
-    void Update(Snake& l_player,std::vector<SnakeBot>& bots);
+    void Update(Snake& l_player,std::vector<SnakeBot>& bots, std::vector<sf::Vector2i> items);
     void Render(sf::RenderWindow& window);
 
     std::vector<sf::Vector2i> get_world_items();
@@ -213,7 +214,8 @@ private:
 public:
     Game();
 
-    explicit Game(Window *window);
+    std::vector<SnakeBot> CreateAllBots(Window *window,int blockSIze , std::vector<sf::Vector2i> items,int count);
+    explicit Game(Window *window , int count);
     sf::Time GetElapsed();
     void RestartClock();
     ~Game();
@@ -341,13 +343,6 @@ private:
     bool _isSettings = false;
     bool _isExit = false;
 };
-
-// в функицю collision передавать массив препятствий и позицию которую надо проверить
-//змейка будет смотреть +-1 во все стороны и отталкиваться от этого
-//можно передать в функцию collision все объекты (кроме яблока) и потом через указатели брать их положение (еще лучше сделать массив с ключами и смотеть по нему)
-//голова бота читает все препятсвия кроме головы игрока (свою голову с ней никогда не столкнется)
-//world get items пуст пока  . он нужен для стенок
-// в items  вхожят все объекты для столкновения т е кроме яблок
 
 
 
