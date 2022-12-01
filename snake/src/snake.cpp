@@ -1,6 +1,16 @@
 
 #include "../include/snake.h"
 
+sf::Text makeText(std::string text,  sf::Font& font, sf::Vector2f position, sf::Color color, int charSize) {
+    sf::Text result(text, font, charSize);
+    sf::FloatRect resultRect = result.getLocalBounds();
+    result.setOrigin(resultRect.left + resultRect.width/2.0f, resultRect.top + resultRect.height/2.0f);
+    result.setPosition(position);
+    result.setFillColor(color);
+
+    return result;
+}
+
 // constructors and destructor
 Window::Window() {
     Setup("Snake", sf::Vector2u(1280, 720));
@@ -67,46 +77,78 @@ void MainMenu::render(Window &window) {
     if (!font.loadFromFile("Textures/arial.ttf")) {
         return;
     }
-    _start->setFont(font);
-    _settings->setFont(font);
-    _exit->setFont(font);
-    _title.setFont(font);
 
-    _start->setBackColor(sf::Color::Blue);
-    _start->setTextColor(sf::Color::Yellow);
-    _settings->setBackColor(sf::Color::Blue);
-    _settings->setTextColor(sf::Color::Yellow);
-    _exit->setBackColor(sf::Color::Blue);
-    _exit->setTextColor(sf::Color::Yellow);
+    if(this->_isStart){
+        sf::Text rounds = makeText("Count of rounds", font, {_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
+        sf::Text bots = makeText("Count of bots", font, {_window->GetWindowSize().x/4.0f, 2.0f*_window->GetWindowSize().y/6.0f });
 
-    _start->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f});
-    _settings->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 110});
-    _exit->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 220});
-    sf::FloatRect titleRect = _title.getLocalBounds();
-    _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
-    _title.setPosition(_window->GetWindowSize().x / 2, _window->GetWindowSize().y / 6);
+        sf::Color grey(100,100,100);
+       /* sf::RectangleShape input[2];
+        for(size_t i = 0; i < 2; ++i) {
+            input[i].setSize({200, 50});
+            input[i].setOrigin({input[i].getSize().x/2, input[i].getSize().y/2});
+            input[i].setFillColor(grey);
+            input[i].setPosition({3.0f*_window->GetWindowSize().x/4.0f, (i*1+1)*_window->GetWindowSize().y/6.0f });
+        }*/
 
-    this->_isStart = _start->isMouseOver(*window.GetRendWindow());
-    this->_isExit = _exit->isMouseOver(*this->_window->GetRendWindow());
-    this->_isSettings = _settings->isMouseOver(*this->_window->GetRendWindow());
-    if (_isStart) {
-        _start->setBackColor(sf::Color::Red);
-        _start->setTextColor(sf::Color::Green);
+        _startGame->setFont(font);
+        _startGame->setBackColor(sf::Color::Blue);
+        _startGame->setTextColor(sf::Color::Yellow);
+        _startGame->setPosition({window.GetWindowSize().x/2.0f, 7.0f*window.GetWindowSize().y/8.0f});
+        if(_startGame->isMouseOver(*_window->GetRendWindow())){
+            _startGame->setBackColor(sf::Color::Red);
+            _startGame->setTextColor(sf::Color::Green);
+        }
+
+        //_window->GetRendWindow()->draw(input[0]);
+        //_window->GetRendWindow()->draw(input[1]);
+        _window->GetRendWindow()->draw(rounds);
+        _window->GetRendWindow()->draw(bots);
+        _startGame->drawTo(*_window->GetRendWindow());
+        _textField->draw(*window.GetRendWindow());
+        _textFieldBots->draw(*window.GetRendWindow());
+        _window->GetRendWindow()->display();
+    } else {
+        _start->setFont(font);
+        _settings->setFont(font);
+        _exit->setFont(font);
+        _title.setFont(font);
+
+        _start->setBackColor(sf::Color::Blue);
+        _start->setTextColor(sf::Color::Yellow);
+        _settings->setBackColor(sf::Color::Blue);
+        _settings->setTextColor(sf::Color::Yellow);
+        _exit->setBackColor(sf::Color::Blue);
+        _exit->setTextColor(sf::Color::Yellow);
+
+        _start->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f});
+        _settings->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 110});
+        _exit->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 220});
+        sf::FloatRect titleRect = _title.getLocalBounds();
+        _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
+        _title.setPosition(_window->GetWindowSize().x / 2, _window->GetWindowSize().y / 6);
+
+        this->_isExit = _exit->isMouseOver(*this->_window->GetRendWindow());
+        this->_isSettings = _settings->isMouseOver(*this->_window->GetRendWindow());
+        if (_start->isMouseOver(*this->_window->GetRendWindow())) {
+            _start->setBackColor(sf::Color::Red);
+            _start->setTextColor(sf::Color::Green);
+        }
+        if (_isExit) {
+            _exit->setBackColor(sf::Color::Red);
+            _exit->setTextColor(sf::Color::Green);
+        }
+        if (_isSettings) {
+            _settings->setBackColor(sf::Color::Red);
+            _settings->setTextColor(sf::Color::Green);
+        }
+
+        window.GetRendWindow()->draw(_title);
+        _start->drawTo(*window.GetRendWindow());
+        _settings->drawTo(*window.GetRendWindow());
+        _exit->drawTo(*window.GetRendWindow());
+        _window->GetRendWindow()->display();
     }
-    if (_isExit) {
-        _exit->setBackColor(sf::Color::Red);
-        _exit->setTextColor(sf::Color::Green);
-    }
-    if (_isSettings) {
-        _settings->setBackColor(sf::Color::Red);
-        _settings->setTextColor(sf::Color::Green);
-    }
-
-    window.GetRendWindow()->draw(_title);
-    _start->drawTo(*window.GetRendWindow());
-    _settings->drawTo(*window.GetRendWindow());
-    _exit->drawTo(*window.GetRendWindow());
-    _window->GetRendWindow()->display();
 }
 
 void MainMenu::update(Window &window) {
@@ -121,9 +163,23 @@ void MainMenu::update(Window &window) {
             if (e.type == sf::Event::MouseButtonPressed)
                 window.GetRendWindow()->close();
         }
-        if (this->_isStart) {
-            if (e.type == sf::Event::MouseButtonPressed)
-                window.setState(new Game(&window,4));
+
+        if (this->_start->isMouseOver(*window.GetRendWindow()) && e.type == sf::Event::MouseButtonPressed) {
+            this->_isStart = true;
+        }
+        if (this->_startGame->isMouseOver(*window.GetRendWindow())) {
+            if (e.type == sf::Event::MouseButtonPressed) {
+                std::cout << _textField->getString() << " " << _textFieldBots->getString();
+                window.setState(new Game(&window));
+            }
+        }
+        if(e.type == sf::Event::MouseButtonReleased) {
+            _textField->released(*window.GetRendWindow(), e);
+            _textFieldBots->released(*window.GetRendWindow(), e);
+        }
+        else {
+            _textField->handleInput(e);
+            _textFieldBots->handleInput(e);
         }
         if (this->_isSettings) {
             if (e.type == sf::Event::MouseButtonPressed)
@@ -131,6 +187,17 @@ void MainMenu::update(Window &window) {
         }
     }
 };
+
+json MainMenu::getConfig(const std::string &fileName) {
+    std::ifstream inpFile(fileName);
+    if(!inpFile){
+        //возвращает default значения
+        return 1;
+    }
+
+    json config = json::parse(inpFile);
+    return config;
+}
 
 void Options::render(Window &window) {
     window.GetRendWindow()->clear();
@@ -985,8 +1052,10 @@ void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_s
     _content.setFont(_font);
     _content.setString("score::");
     _content.setCharacterSize(l_charSize);
-    _content.setColor(sf::Color::White);
-    _content.setPosition(l_screenPos + offset);
+
+    _content.setFillColor(sf::Color::White);
+    _content.setPosition(l_screenPos+offset);
+
 
     _backdrop.setSize(sf::Vector2f(l_width, (l_visible * (l_charSize * 1.2f))));
     _backdrop.setFillColor(sf::Color(90, 90, 90, 90));
