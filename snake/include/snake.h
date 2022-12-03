@@ -3,11 +3,17 @@
 #define DDZ_SNAKE_H
 
 #include <iostream>
+#include <fstream>
 #include "SFML/Graphics.hpp"
 #include "SFML/Window.hpp"
 #include "SFML/System.hpp"
+#include "../lib/single_include/nlohmann/json.hpp"
 #include "ctime"
 #include "iostream"
+
+using json=nlohmann::json;
+
+sf::Text makeText(std::string text, sf::Font& font, sf::Vector2f position, sf::Color color = sf::Color::White, int charSize = 30);
 
 class Window;
 
@@ -65,10 +71,6 @@ public:
 
 };
 
-
-
-
-
 struct SnakeSegment{
     SnakeSegment(int x,int y) : position(x,y){}
     sf::Vector2i position;
@@ -100,6 +102,7 @@ public:
 
     void Extend();
     void Reset(bool is_multy);
+    void Disapear();
 
     void Move();
     void Tick(std::vector<sf::Vector2i> items);
@@ -214,13 +217,16 @@ private:
     sf::Time _elapsed;
     Textbox _text;
     std::vector<SnakeBot> _bots;
+    int _rounds;
+    int _firstRounds;
+    int _secondRounds;
     std::vector<sf::Vector2i> get_game_items();
 
 public:
     Game();
 
     std::vector<SnakeBot> CreateAllBots(Window *window,int blockSIze , std::vector<sf::Vector2i> items,int count);
-    explicit Game(Window *window , int count,bool is_multiplayer);
+    explicit Game(Window *window , int count,int rounds ,bool is_multiplayer);
     sf::Time GetElapsed();
     void RestartClock();
     ~Game();
@@ -242,7 +248,7 @@ public:
 
         _text.setString(btnText);
         _text.setCharacterSize(charSize);
-        _text.setColor(textColor);
+        _text.setFillColor(textColor);
     }
 
     // Pass font by reference:
@@ -255,7 +261,7 @@ public:
     }
 
     void setTextColor(sf::Color color) {
-        _text.setColor(color);
+        _text.setFillColor(color);
     }
 
     void setPosition(sf::Vector2f point) {
@@ -294,6 +300,81 @@ private:
     int _btnHeight;
 };
 
+class TextField{
+public:
+    TextField(unsigned int maxChars, sf::Vector2f position) :
+            _size(maxChars),
+            _rect(sf::Vector2f(15 * _size, 40)), // 15 pixels per char, 20 pixels height, you can tweak
+            _position(position),
+            _hasfocus(false)
+    {
+        _font.loadFromFile("Textures/arial.ttf");
+        _rect.setOutlineThickness(2);
+        _rect.setFillColor(sf::Color::White);
+        _rect.setOutlineColor(sf::Color(127,127,127));
+        sf::FloatRect resultRect = _rect.getLocalBounds();
+        _rect.setOrigin(resultRect.left + resultRect.width/2.0f, resultRect.top + resultRect.height/2.0f);
+        _rect.setPosition(this->_position);
+    }
+
+    void setPosition(float x, float y) {
+        _rect.setPosition(x, y);
+    }
+
+    std::string getString() {
+        return _text;
+    }
+
+    bool contains(sf::Vector2f point) const{
+        return _rect.getGlobalBounds().contains(point);
+    }
+
+    void setFocus(bool focus){
+        _hasfocus = focus;
+        if (focus){
+            _rect.setOutlineColor(sf::Color::Blue);
+        }
+        else{
+            _rect.setOutlineColor(sf::Color(127, 127, 127)); // Gray color
+        }
+    }
+
+    void handleInput(sf::Event e){
+        if (!_hasfocus || e.type != sf::Event::TextEntered)
+            return;
+
+        if (e.text.unicode == 8){   // Delete key
+            _text = _text.substr(0, _text.size() - 1);
+        }
+        else if (_text.size() < _size){
+            _text += e.text.unicode;
+        }
+    }
+
+    void draw(sf::RenderWindow& window){
+        _inputText = makeText(_text, _font, _position, sf::Color::Black, 18);
+        window.draw(_rect);
+        window.draw(_inputText);
+    }
+
+    void released(sf::RenderWindow& window, sf::Event& event) {
+        auto pos = sf::Mouse::getPosition(window);
+        this->setFocus(false);
+        if (this->contains(sf::Vector2f(pos))) {
+            this->setFocus(true);
+        }
+    }
+
+private:
+    unsigned int _size;
+    sf::Font _font;
+    std::string _text;
+    sf::Text _inputText;
+    sf::RectangleShape _rect;
+    sf::Vector2f _position;
+    bool _hasfocus;
+};
+
 class Options : public State {
 public:
     Options(Window* window) {
@@ -325,8 +406,12 @@ public:
         _window = window;
         sf::Vector2f size = {300, 100};
         _start = new Button("Start", size, 32, sf::Color::Blue, sf::Color::Yellow);
+        _startGame = new Button("Start Game", size, 32, sf::Color::Blue, sf::Color::Yellow);
         _settings = new Button("Settings", size, 32, sf::Color::Blue, sf::Color::Yellow);
         _exit = new Button("Exit", size, 32, sf::Color::Blue, sf::Color::Yellow);
+        _textField = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
+        _textFieldBots = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 2.0f*_window->GetWindowSize().y/6.0f });
+
 
         _title.setCharacterSize(44);
         _title.setString("The Best Snake");
@@ -337,12 +422,17 @@ public:
     void render(Window &window) override;
 
     void update(Window &window) override;
+
+    json getConfig(const std::string& fileName);
 private:
     Window* _window;
     sf::Text _title;
     Button* _start;
+    Button* _startGame;
     Button* _settings;
     Button* _exit;
+    TextField* _textField;
+    TextField* _textFieldBots;
 
     bool _isStart = false;
     bool _isSettings = false;
