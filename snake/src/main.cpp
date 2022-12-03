@@ -2,11 +2,10 @@
 #include "../include/snake.h"
 
 int main() {
-
-
-    sf::Vector2u size(1080, 720);
-    std::string title = "snake";
-    Window window(title, size, nullptr);
+    json config = getConfig("src/config.json");
+    sf::Vector2u size(config["default"]["window_width"], config["default"]["window_height"]);
+    std::string title = "The Best Snake";
+    Window window(title, size, config, nullptr);
     window.setState(new MainMenu(&window));
     window.GetRendWindow()->setFramerateLimit(30);
     while (window.GetRendWindow()->isOpen()) {

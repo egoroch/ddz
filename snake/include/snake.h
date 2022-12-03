@@ -15,6 +15,8 @@ using json=nlohmann::json;
 
 sf::Text makeText(std::string text, sf::Font& font, sf::Vector2f position, sf::Color color = sf::Color::White, int charSize = 30);
 
+json getConfig(const std::string& fileName);
+
 class Window;
 
 class State {
@@ -40,6 +42,8 @@ private:
     sf::Vector2u _windowSize;
     std::string _windowTitle;
     bool _isFullScreen;
+    json _config;
+    json _currentConfig;
 
     //private functions
     void Destroy();
@@ -51,7 +55,7 @@ private:
 public:
     Window();
 
-    Window(const std::string &title, const sf::Vector2u &size, State *state);
+    Window(const std::string &title, const sf::Vector2u &size, json config, State *state);
 
     ~Window();
 
@@ -60,6 +64,8 @@ public:
     bool IsFullScreen();
 
     sf::Vector2u GetWindowSize();
+
+    json getConfig() { return _currentConfig; };
 
     void ToggleFullScreen();
 
@@ -256,6 +262,11 @@ public:
         _text.setFont(fonts);
     }
 
+    sf::Vector2f getSize(){
+        sf::Vector2f size = {_btnWidth, _btnHeight};
+        return size;
+    }
+
     void setBackColor(sf::Color color) {
         _button.setFillColor(color);
     }
@@ -292,12 +303,16 @@ public:
 
         return mouseX < btnxPosWidth && mouseX > btnPosX && mouseY < btnyPosHeight && mouseY > btnPosY;
     }
+
+    sf::RectangleShape getButton(){
+        return _button;
+    }
 private:
     sf::RectangleShape _button;
     sf::Text _text;
 
-    int _btnWidth;
-    int _btnHeight;
+    float _btnWidth;
+    float _btnHeight;
 };
 
 class TextField{
@@ -368,7 +383,7 @@ public:
 private:
     unsigned int _size;
     sf::Font _font;
-    std::string _text;
+    std::string _text = "";
     sf::Text _inputText;
     sf::RectangleShape _rect;
     sf::Vector2f _position;
@@ -383,6 +398,9 @@ public:
         sf::Vector2f size = {250, 80};
         _save = new Button("Save", size, 30, sf::Color::Blue, sf::Color::Yellow);
         _back = new Button("Back", size, 30, sf::Color::Blue, sf::Color::Yellow);
+
+        _name = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
+
     }
 
     void render(Window &window) override;
@@ -392,6 +410,10 @@ private:
     Window* _window;
     Button* _save;
     Button* _back;
+
+    TextField* _name;
+    TextField* _color;
+    TextField* _windowSize;
 
     bool _isSave;
     bool _isBack;
@@ -404,13 +426,15 @@ public:
 
     MainMenu(Window* window){
         _window = window;
-        sf::Vector2f size = {300, 100};
+        json config = _window->getConfig();
+        sf::Vector2f size = {config["button_width"], config["button_height"]};
         _start = new Button("Start", size, 32, sf::Color::Blue, sf::Color::Yellow);
         _startGame = new Button("Start Game", size, 32, sf::Color::Blue, sf::Color::Yellow);
         _settings = new Button("Settings", size, 32, sf::Color::Blue, sf::Color::Yellow);
         _exit = new Button("Exit", size, 32, sf::Color::Blue, sf::Color::Yellow);
         _textField = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
         _textFieldBots = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 2.0f*_window->GetWindowSize().y/6.0f });
+        _textUser = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 3.0f*_window->GetWindowSize().y/6.0f });
 
 
         _title.setCharacterSize(44);
@@ -423,7 +447,6 @@ public:
 
     void update(Window &window) override;
 
-    json getConfig(const std::string& fileName);
 private:
     Window* _window;
     sf::Text _title;
@@ -433,6 +456,7 @@ private:
     Button* _exit;
     TextField* _textField;
     TextField* _textFieldBots;
+    TextField* _textUser;
 
     bool _isStart = false;
     bool _isSettings = false;
