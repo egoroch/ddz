@@ -1,1 +1,23 @@
-{"firstName":"Egor"}
+{
+  "default" : {
+    "window_width" : 1280,
+    "window_height" : 720,
+    "button_width" : 300,
+    "button_height" : 100,
+    "character_size" : 32
+  },
+  "fullScreen" : {
+    "window_width" : 1920,
+    "window_height" : 1080,
+    "button_width" : 450,
+    "button_height" : 150,
+    "character_size" : 40
+  },
+  "mini" : {
+    "window_width" : 680,
+    "window_height" : 450,
+    "button_width" : 200,
+    "button_height" : 70,
+    "character_size" : 28
+  }
+}

@@ -11,13 +11,35 @@ sf::Text makeText(std::string text, sf::Font &font, sf::Vector2f position, sf::C
     return result;
 }
 
+json getConfig(const std::string& fileName){
+    std::ifstream file(fileName);
+    json config;
+    if(!file){
+        config["default"] = {
+                {"window_width", 1280},
+                {"window_height", 720},
+                {"button_width", 300},
+                {"button_height", 100},
+                {"character_size", 32}
+        };
+        return config;
+    }
+
+    file >> config;
+
+    file.close();
+    return config;
+}
+
 // constructors and destructor
 Window::Window() {
     Setup("Snake", sf::Vector2u(1280, 720));
 }
 
-Window::Window(const std::string &title, const sf::Vector2u &size, State *state) {
+Window::Window(const std::string &title, const sf::Vector2u &size, json config, State *state) {
     Setup(title, size);
+    _config = config;
+    _currentConfig = _config["default"];
     _state = state;
     Create();
 }
@@ -33,12 +55,18 @@ sf::Vector2u Window::GetWindowSize() {
 
 void Window::Destroy() {
     _rend_window.close();
-    delete _state;
+    //delete _state;
 }
 
 void Window::ToggleFullScreen() {
     _isFullScreen = !_isFullScreen;
+    if(_isFullScreen){
+        _currentConfig = _config["fullScreen"];
+    } else {
+        _currentConfig = _config["default"];
+    }
     Destroy();
+    this->_windowSize = {_currentConfig["window_width"], _currentConfig["window_height"]};
     Create();
 }
 
@@ -55,7 +83,8 @@ sf::RenderWindow *Window::GetRendWindow() {
 
 void Window::Create() {
     auto style = (_isFullScreen ? sf::Style::Fullscreen : sf::Style::Default);
-    _rend_window.create({_windowSize.x, _windowSize.y, 32}, _windowTitle, style);
+    _rend_window.create({_windowSize.x, _windowSize.y, 32}, _windowTitle,  sf::Style::Default);
+    this->GetRendWindow()->setFramerateLimit(30);
 }
 
 void State::setWindow(Window *cw) {
@@ -66,7 +95,7 @@ bool Window::IsFullScreen() { return _isFullScreen; }
 
 
 void Window::setState(State *st) {
-    // if (_state != nullptr) delete _state;
+    if (_state != nullptr) _state = nullptr;
     _state = st;
     _state->setWindow(this);
 }
@@ -96,7 +125,6 @@ void MainMenu::render(Window &window) {
             _startGame->setBackColor(sf::Color::Red);
             _startGame->setTextColor(sf::Color::Green);
         }
-        _startGame->getButton().setTexture(&button);
         _window->GetRendWindow()->draw(rounds);
         _window->GetRendWindow()->draw(bots);
         _window->GetRendWindow()->draw(user);
@@ -119,8 +147,8 @@ void MainMenu::render(Window &window) {
         _exit->setTextColor(sf::Color::Yellow);
 
         _start->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f});
-        _settings->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 110});
-        _exit->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 220});
+        _settings->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + _start->getSize().y + 10});
+        _exit->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 2 * _settings->getSize().y + 20});
         sf::FloatRect titleRect = _title.getLocalBounds();
         _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
         _title.setPosition(_window->GetWindowSize().x / 2, _window->GetWindowSize().y / 6);
@@ -159,6 +187,11 @@ void MainMenu::update(Window &window) {
             window.GetRendWindow()->close();
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
             window.GetRendWindow()->close();
+        if(e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::F5) {
+            window.ToggleFullScreen();
+            window.setState(new MainMenu(&window));
+        }
+
         if (this->_isExit) {
             if (e.type == sf::Event::MouseButtonPressed)
                 window.GetRendWindow()->close();
@@ -197,17 +230,6 @@ void MainMenu::update(Window &window) {
     }
 };
 
-json MainMenu::getConfig(const std::string &fileName) {
-    std::ifstream inpFile(fileName);
-    if (!inpFile) {
-        //возвращает default значения
-        return 1;
-    }
-
-    json config = json::parse(inpFile);
-    return config;
-}
-
 void Options::render(Window &window) {
     window.GetRendWindow()->clear();
     sf::Font font;
@@ -216,6 +238,7 @@ void Options::render(Window &window) {
     }
     _save->setFont(font);
     _back->setFont(font);
+    sf::Text name = makeText("Input name", font, {window.GetWindowSize().x / 4.0f, window.GetWindowSize().y / 6.0f});
 
     _save->setBackColor(sf::Color::Blue);
     _save->setTextColor(sf::Color::Yellow);
@@ -234,9 +257,11 @@ void Options::render(Window &window) {
         _back->setBackColor(sf::Color::Red);
         _back->setTextColor(sf::Color::Green);
     }
-
+    _window->GetRendWindow()->draw(name);
     _save->drawTo(*_window->GetRendWindow());
     _back->drawTo(*_window->GetRendWindow());
+    _name->draw(*_window->GetRendWindow());
+
     _window->GetRendWindow()->display();
 
 }
@@ -250,6 +275,8 @@ void Options::update(Window &window) {
             window.GetRendWindow()->close();
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
             window.GetRendWindow()->close();
+        if(e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::F5)
+            window.ToggleFullScreen();
         if (this->_isSave) {
             if (e.type == sf::Event::MouseButtonPressed)
                 //отправить данные в конфиг
