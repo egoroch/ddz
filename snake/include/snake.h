@@ -111,7 +111,7 @@ public:
     void Disapear();
 
     void Move();
-    void Tick(std::vector<sf::Vector2i> items);
+    void Tick();
     void Render(sf::RenderWindow& l_window);
 
 
@@ -224,6 +224,7 @@ private:
     Textbox _text;
     std::vector<SnakeBot> _bots;
     int _rounds;
+    int _countOfBots;
     int _firstRounds;
     int _secondRounds;
     std::vector<sf::Vector2i> get_game_items();
@@ -231,7 +232,7 @@ private:
 public:
     Game();
 
-    std::vector<SnakeBot> CreateAllBots(Window *window,int blockSIze , std::vector<sf::Vector2i> items,int count);
+    void CreateAllBots(Window *window,int blockSIze , std::vector<sf::Vector2i> items,int count);
     explicit Game(Window *window , int count,int rounds ,bool is_multiplayer);
     sf::Time GetElapsed();
     void RestartClock();

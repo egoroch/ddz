@@ -51,7 +51,7 @@ Window::~Window() {
 // functions
 sf::Vector2u Window::GetWindowSize() {
     return _windowSize;
-};
+}
 
 void Window::Destroy() {
     _rend_window.close();
@@ -245,7 +245,7 @@ void MainMenu::update(Window &window) {
         if(this->_back->isMouseOver(*_window->GetRendWindow()) && e.type == sf::Event::MouseButtonPressed)
             window.setState(new MainMenu(&window));
     }
-};
+}
 
 void Options::render(Window &window) {
     window.GetRendWindow()->clear();
@@ -314,7 +314,7 @@ void Options::update(Window &window) {
             if (e.type == sf::Event::MouseButtonPressed)
                 window.setState(new MainMenu(&window));
         }
-    };
+    }
 }
 
 Game::Game() {
@@ -323,6 +323,7 @@ Game::Game() {
     SnakeBot bot1 = SnakeBot(0, sf::Vector2i(-1, -1));
     _bots.push_back(bot1);
     sf::Vector2u size(0, 0);
+    _countOfBots =0;
     _world = size;
     _text.Setup(1, 30, 350, sf::Vector2f(225, 0));
 }
@@ -427,9 +428,10 @@ Game::Game(Window *window, int countOfBots, int rounds, bool is_multiplay) {
     _rounds = rounds;
     _window = window;
     _world = World(_window->GetWindowSize());
-    _snake = Snake(_world.GetBlockSize(), false);
-    _firstRounds = 0;
-    _secondRounds = 0;
+    _snake = Snake(_world.GetBlockSize(),false);
+    _firstRounds =0;
+    _secondRounds =0;
+    _countOfBots =countOfBots;
 
     std::vector<sf::Vector2i> res;
     std::vector<sf::Vector2i> fromWorld = _world.get_world_items();
@@ -447,10 +449,11 @@ Game::Game(Window *window, int countOfBots, int rounds, bool is_multiplay) {
         for (auto itr = fromSecondSnake.begin(); itr < fromSecondSnake.end(); ++itr) {
             res.push_back(*itr);
         }
-    } else _player2_snake = Snake(0, false);
+    }else _player2_snake =Snake(0,true);
 
     _text.Setup(1, 30, _window->GetWindowSize().x, sf::Vector2f(0, _window->GetWindowSize().y - 50));
-    _bots = this->CreateAllBots(window, _world.GetBlockSize(), res, countOfBots);
+    this->CreateAllBots(window,_world.GetBlockSize(),res,countOfBots);
+
 }
 
 
@@ -539,26 +542,29 @@ void Game::update(Window &window) {
                 _player2_snake.SetDirection(Direction::Right);
             }
         }
-    };
+    }
     float timestepMainSnake = 1.0f / _snake.GetSpeed();
 
     if (_elapsed.asSeconds() >= timestepMainSnake) {
 
+
+        _snake.Tick();
+        if (_is_multiplayer){
+            _player2_snake.Tick();}
         std::vector<sf::Vector2i> allItems = this->get_game_items();
-        _snake.Tick(allItems);
-        if (_is_multiplayer)
-            _player2_snake.Tick(allItems);
         for (auto itr = _bots.begin() + 1; itr != _bots.end(); ++itr)
             itr->Tick(_world.getApplePosition(), allItems, _snake.GetDirection());
         _bots.begin()->Tick(sf::Vector2i(_snake.GetPosition().x + 2, _snake.GetPosition().y), allItems,
                             _snake.GetDirection());
+        allItems.clear();
         allItems = this->get_game_items();
-        _snake.CheckCollision(allItems);
-        if (_is_multiplayer)
-            _player2_snake.CheckCollision(allItems);
 
-        for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
-            itr->CheckCollision(allItems);
+        _snake.CheckCollision(allItems);
+        if (_is_multiplayer) {
+            _player2_snake.CheckCollision(allItems);
+        }
+            for (auto itr = _bots.begin(); itr != _bots.end(); ++itr){
+                itr->CheckCollision(allItems);}
 
 
         //_bots[0].ChangeDirection(this->_world.getApplePostition());
@@ -574,23 +580,26 @@ void Game::update(Window &window) {
                     itr->Disappear();
                 }
 
-            if (_snake.HasLost() || _player2_snake.HasLost()) {
-                if (_snake.HasLost()) _secondRounds++;
-                if (_player2_snake.HasLost()) _firstRounds++;
-                _snake.Reset(false);
-                _player2_snake.Reset(true);
-                int count = _bots.size();
-                _bots.clear();
-                _bots = this->CreateAllBots(_window, _world.GetBlockSize(), allItems, count);
+                if (_snake.HasLost() || _player2_snake.HasLost()) {
+                    if (_snake.HasLost()) _secondRounds++;
+                    if (_player2_snake.HasLost()) _firstRounds++;
 
-            }
-        } else {
-            if (_snake.HasLost()) {
-                _snake.Reset(false);
-            }
-            if (_player2_snake.HasLost()) {
-                _player2_snake.Reset(true);
-            }
+                    _snake.Reset(false);
+                    _player2_snake.Reset(true);
+
+                    allItems.clear();
+                    allItems = this->get_game_items();
+                    std::cout << "прошло цикл с мультиплеем"<<'\n';
+                    CreateAllBots(_window, _world.GetBlockSize(), allItems, _countOfBots);
+                    std::cout << "не лагает"<<'\n';
+                    //_world.Update(_snake, _player2_snake, _bots, allItems);
+
+
+                }
+            } else {
+                if (_snake.HasLost()) {
+                    _snake.Reset(false);
+                }
 
             for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
                 if (itr->HasLost()) {
@@ -601,17 +610,23 @@ void Game::update(Window &window) {
     this->RestartClock();
 };
 
-std::vector<SnakeBot> Game::CreateAllBots(Window *window, int blockSIze, std::vector<sf::Vector2i> items, int count) {
+void Game::CreateAllBots(Window *window, int blockSIze, std::vector<sf::Vector2i> items, int count) {
+    _bots.clear();
     std::vector<SnakeBot> res;
     int maxX = (window->GetWindowSize().x / blockSIze);
     int maxY = (window->GetWindowSize().y / blockSIze);
     sf::Vector2i head;
+    if(count == 0){
+        head = sf::Vector2i (-2,-2);
+        res.push_back(SnakeBot(blockSIze, head));
+        return ;
+    }
     //head = sf::Vector2i(rand() % maxX, rand() % (maxY-3));
 
     for (int i = 0; i < count; ++i) {
         int Check = -1;
         while (Check != 0) {
-            Check++;
+            Check = 0; //check++
             head = sf::Vector2i(rand() % maxX, (rand() % (maxY - 3)) + 3);
 
             for (auto itr = items.begin(); itr != items.end(); ++itr) {
@@ -627,7 +642,8 @@ std::vector<SnakeBot> Game::CreateAllBots(Window *window, int blockSIze, std::ve
 
         res.push_back(SnakeBot(blockSIze, head));
     }
-    return res;
+    _bots = res;
+    return;
 }
 
 
@@ -737,7 +753,7 @@ void Snake::Extend() {
     }
 }
 
-void Snake::Tick(std::vector<sf::Vector2i> items) {
+void Snake::Tick() {
     if (_snakeBody.empty()) { return; }
     if (_dir == Direction::None) { return; }
     Move();
@@ -752,7 +768,7 @@ Direction Snake::GetPhysicalDirection() {
         return (head.position.y > shoulder.position.y ? Direction::Down : Direction::Up);
     if (head.position.y == shoulder.position.y)
         return (head.position.x > shoulder.position.x ? Direction::Right : Direction::Left);
-
+    return Direction::None;
 }
 
 void Snake::Move() {
@@ -782,6 +798,7 @@ void Snake::CheckCollision(std::vector<sf::Vector2i> items) {
         }
         if (2 == CountMatches) {
             Lose();
+            std::cout<<"snake die"<<'\n';
             break;
         }
     }
@@ -803,6 +820,10 @@ void Snake::Render(sf::RenderWindow &l_window) {
 }
 
 SnakeBot::SnakeBot(int l_blockSize, sf::Vector2i headPos) {
+    if(l_blockSize==0) {
+        _snakeBody.clear();
+       return;
+    }
     _size = l_blockSize;
     _bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
     Reset(headPos);
@@ -1125,6 +1146,7 @@ void SnakeBot::Disappear() {
 }
 
 void SnakeBot::CheckCollision(std::vector<sf::Vector2i> items) {
+
     auto head = _snakeBody.begin();
     int CountMatches = 0;
     for (auto itr = items.begin(); itr != items.end(); ++itr) {
@@ -1133,6 +1155,7 @@ void SnakeBot::CheckCollision(std::vector<sf::Vector2i> items) {
         }
         if (CountMatches == 2) {
             Lose();
+            std::cout<<"bot die"<<'\n';
             break;
         }
     }
