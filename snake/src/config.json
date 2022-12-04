@@ -4,6 +4,8 @@
     "window_height" : 720,
     "button_width" : 300,
     "button_height" : 100,
+    "pause_width" : 200,
+    "pause_height" : 80,
     "character_size" : 32
   },
   "fullScreen" : {
@@ -11,6 +13,8 @@
     "window_height" : 1080,
     "button_width" : 450,
     "button_height" : 150,
+    "pause_width" : 300,
+    "pause_height" : 100,
     "character_size" : 40
   },
   "mini" : {
@@ -18,6 +22,8 @@
     "window_height" : 450,
     "button_width" : 200,
     "button_height" : 70,
+    "pause_width" : 160,
+    "pause_height" : 55,
     "character_size" : 28
   }
 }
