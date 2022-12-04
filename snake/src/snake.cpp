@@ -553,9 +553,9 @@ void Game::update(Window &window) {
             _player2_snake.Tick();}
         std::vector<sf::Vector2i> allItems = this->get_game_items();
         for (auto itr = _bots.begin() + 1; itr != _bots.end(); ++itr)
-            itr->Tick(_world.getApplePosition(), allItems, _snake.GetDirection());
+            itr->Tick(_world.getApplePosition(), allItems, _snake.GetDirection(),_player2_snake.GetDirection());
         _bots.begin()->Tick(sf::Vector2i(_snake.GetPosition().x + 2, _snake.GetPosition().y), allItems,
-                            _snake.GetDirection());
+                            _snake.GetDirection(),_player2_snake.GetDirection());
         allItems.clear();
         allItems = this->get_game_items();
 
@@ -1115,9 +1115,9 @@ void SnakeBot::Extend() {
     }
 }
 
-void SnakeBot::Tick(sf::Vector2i apple_position, std::vector<sf::Vector2i> items, Direction player_dir) {
+void SnakeBot::Tick(sf::Vector2i apple_position, std::vector<sf::Vector2i> items, Direction player_dir,Direction seecond_player_dir) {
     if (_snakeBody.empty()) { return; }
-    if (player_dir == Direction::None) {
+    if (player_dir == Direction::None && seecond_player_dir == Direction::None) {
         return;
     }
     this->ChangeDirection(apple_position, items, player_dir);

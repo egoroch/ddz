@@ -148,7 +148,7 @@ public:
     void Reset(sf::Vector2i headPos);
 
     void Move(sf::Vector2i apple_position);
-    void Tick(sf::Vector2i apple_position,std::vector<sf::Vector2i>,Direction player_dir);
+    void Tick(sf::Vector2i apple_position,std::vector<sf::Vector2i>,Direction player_dir, Direction second_player);
     void Render(sf::RenderWindow& l_window);
 
     void CheckCollision(std::vector<sf::Vector2i> items);
