@@ -2,11 +2,11 @@
   "default" : {
     "window_width" : 1280,
     "window_height" : 720,
-    "button_width" : 300,
-    "button_height" : 100,
+    "button_width" : 280,
+    "button_height" : 90,
     "pause_width" : 200,
     "pause_height" : 80,
-    "character_size" : 32
+    "character_size" : 30
   },
   "fullScreen" : {
     "window_width" : 1920,
@@ -20,10 +20,10 @@
   "mini" : {
     "window_width" : 680,
     "window_height" : 450,
-    "button_width" : 200,
-    "button_height" : 70,
+    "button_width" : 190,
+    "button_height" : 60,
     "pause_width" : 160,
     "pause_height" : 55,
-    "character_size" : 28
+    "character_size" : 26
   }
 }

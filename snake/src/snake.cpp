@@ -116,19 +116,27 @@ void MainMenu::render(Window &window) {
                                  {_window->GetWindowSize().x / 4.0f, 2.0f * _window->GetWindowSize().y / 6.0f});
         sf::Text user = makeText("Count of players", font,
                                  {_window->GetWindowSize().x / 4.0f, 3.0f * _window->GetWindowSize().y / 6.0f});
-
+        _back->setFont(font);
+        _back->setBackColor(sf::Color::Blue);
+        _back->setTextColor(sf::Color::Yellow);
+        _back->setPosition({window.GetWindowSize().x / 4.0f, 7.0f * window.GetWindowSize().y / 8.0f});
         _startGame->setFont(font);
         _startGame->setBackColor(sf::Color::Blue);
         _startGame->setTextColor(sf::Color::Yellow);
-        _startGame->setPosition({window.GetWindowSize().x / 2.0f, 7.0f * window.GetWindowSize().y / 8.0f});
+        _startGame->setPosition({3*window.GetWindowSize().x / 4.0f, 7.0f * window.GetWindowSize().y / 8.0f});
         if (_startGame->isMouseOver(*_window->GetRendWindow())) {
             _startGame->setBackColor(sf::Color::Red);
             _startGame->setTextColor(sf::Color::Green);
+        }
+        if (_back->isMouseOver(*_window->GetRendWindow())) {
+            _back->setBackColor(sf::Color::Red);
+            _back->setTextColor(sf::Color::Green);
         }
         _window->GetRendWindow()->draw(rounds);
         _window->GetRendWindow()->draw(bots);
         _window->GetRendWindow()->draw(user);
         _startGame->drawTo(*_window->GetRendWindow());
+        _back->drawTo(*_window->GetRendWindow());
         _textField->draw(*window.GetRendWindow());
         _textFieldBots->draw(*window.GetRendWindow());
         _textUser->draw(*window.GetRendWindow());
@@ -234,6 +242,8 @@ void MainMenu::update(Window &window) {
             if (e.type == sf::Event::MouseButtonPressed)
                 window.setState(new Options(&window));
         }
+        if(this->_back->isMouseOver(*_window->GetRendWindow()) && e.type == sf::Event::MouseButtonPressed)
+            window.setState(new MainMenu(&window));
     }
 };
 
@@ -274,7 +284,7 @@ void Options::render(Window &window) {
 }
 
 void Options::update(Window &window) {
-    window.GetRendWindow()->clear(sf::Color::Cyan);
+    window.GetRendWindow()->clear();
     //render stuff
     sf::Event e;
     while (window.GetRendWindow()->pollEvent(e)) {
@@ -285,9 +295,20 @@ void Options::update(Window &window) {
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::F5)
             window.ToggleFullScreen();
         if (this->_isSave) {
-            if (e.type == sf::Event::MouseButtonPressed)
-                //отправить данные в конфиг
+            if (e.type == sf::Event::MouseButtonPressed) {
+                if(empty(this->_name->getString())){
+                    continue;
+                } else {
+                    std::cout << this->_name->getString();
+
+                }
                 window.setState(new MainMenu(&window));
+            }
+        }
+        if (e.type == sf::Event::MouseButtonReleased) {
+            _name->released(*window.GetRendWindow(), e);
+        } else {
+            _name->handleInput(e);
         }
         if (this->_isBack) {
             if (e.type == sf::Event::MouseButtonPressed)

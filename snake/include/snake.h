@@ -327,7 +327,7 @@ public:
             _position(position),
             _hasfocus(false)
     {
-        _font.loadFromFile("Textures/arial.ttf");
+        _font.loadFromFile("Textures/retro-land-mayhem.ttf");
         _rect.setOutlineThickness(2);
         _rect.setFillColor(sf::Color::White);
         _rect.setOutlineColor(sf::Color(127,127,127));
@@ -398,10 +398,11 @@ class Options : public State {
 public:
     Options(Window* window) {
         _window = window;
-
-        sf::Vector2f size = {250, 80};
-        _save = new Button("Save", size, 30, sf::Color::Blue, sf::Color::Yellow);
-        _back = new Button("Back", size, 30, sf::Color::Blue, sf::Color::Yellow);
+        json config = _window->getConfig();
+        sf::Vector2f size = {config["button_width"], config["button_height"]};
+        int charSize = config["character_size"];
+        _save = new Button("Save", size, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _back = new Button("Back", size, charSize, sf::Color::Blue, sf::Color::Yellow);
 
         _name = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
 
@@ -437,6 +438,7 @@ public:
         _startGame = new Button("Start Game", size, charSize, sf::Color::Blue, sf::Color::Yellow);
         _settings = new Button("Settings", size, charSize, sf::Color::Blue, sf::Color::Yellow);
         _exit = new Button("Exit", size, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _back = new Button("Back", size, charSize, sf::Color::Blue, sf::Color::Yellow);
         _textField = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
         _textFieldBots = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 2.0f*_window->GetWindowSize().y/6.0f });
         _textUser = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 3.0f*_window->GetWindowSize().y/6.0f });
@@ -458,6 +460,7 @@ private:
     Button* _startGame;
     Button* _settings;
     Button* _exit;
+    Button* _back;
     TextField* _textField;
     TextField* _textFieldBots;
     TextField* _textUser;
@@ -465,7 +468,6 @@ private:
     bool _isStart = false;
     bool _isSettings = false;
     bool _isExit = false;
-    bool _isOut = false;
 };
 
 class Pause: public State{
