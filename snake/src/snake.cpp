@@ -11,15 +11,15 @@ sf::Text makeText(std::string text, sf::Font &font, sf::Vector2f position, sf::C
     return result;
 }
 
-json getConfig(const std::string& fileName){
+json getConfig(const std::string &fileName) {
     std::ifstream file(fileName);
     json config;
-    if(!file){
+    if (!file) {
         config["default"] = {
-                {"window_width", 1280},
-                {"window_height", 720},
-                {"button_width", 300},
-                {"button_height", 100},
+                {"window_width",   1280},
+                {"window_height",  720},
+                {"button_width",   300},
+                {"button_height",  100},
                 {"character_size", 32}
         };
         return config;
@@ -60,7 +60,7 @@ void Window::Destroy() {
 
 void Window::ToggleFullScreen() {
     _isFullScreen = !_isFullScreen;
-    if(_isFullScreen){
+    if (_isFullScreen) {
         _currentConfig = _config["fullScreen"];
     } else {
         _currentConfig = _config["default"];
@@ -83,7 +83,7 @@ sf::RenderWindow *Window::GetRendWindow() {
 
 void Window::Create() {
     auto style = (_isFullScreen ? sf::Style::Fullscreen : sf::Style::Default);
-    _rend_window.create({_windowSize.x, _windowSize.y, 32}, _windowTitle,  sf::Style::Default);
+    _rend_window.create({_windowSize.x, _windowSize.y, 32}, _windowTitle, sf::Style::Default);
     this->GetRendWindow()->setFramerateLimit(30);
 }
 
@@ -103,7 +103,7 @@ void Window::setState(State *st) {
 void MainMenu::render(Window &window) {
     window.GetRendWindow()->clear(sf::Color::Black);
     sf::Font font;
-    if (!font.loadFromFile("./Textures/arial.ttf")) {
+    if (!font.loadFromFile("./Textures/retro-land-mayhem.ttf")) {
         return;
     }
     sf::Texture button;
@@ -116,24 +116,36 @@ void MainMenu::render(Window &window) {
                                  {_window->GetWindowSize().x / 4.0f, 2.0f * _window->GetWindowSize().y / 6.0f});
         sf::Text user = makeText("Count of players", font,
                                  {_window->GetWindowSize().x / 4.0f, 3.0f * _window->GetWindowSize().y / 6.0f});
-
+        _back->setFont(font);
+        _back->setBackColor(sf::Color::Blue);
+        _back->setTextColor(sf::Color::Yellow);
+        _back->setPosition({window.GetWindowSize().x / 4.0f, 7.0f * window.GetWindowSize().y / 8.0f});
         _startGame->setFont(font);
         _startGame->setBackColor(sf::Color::Blue);
         _startGame->setTextColor(sf::Color::Yellow);
-        _startGame->setPosition({window.GetWindowSize().x / 2.0f, 7.0f * window.GetWindowSize().y / 8.0f});
+        _startGame->setPosition({3*window.GetWindowSize().x / 4.0f, 7.0f * window.GetWindowSize().y / 8.0f});
         if (_startGame->isMouseOver(*_window->GetRendWindow())) {
             _startGame->setBackColor(sf::Color::Red);
             _startGame->setTextColor(sf::Color::Green);
+        }
+        if (_back->isMouseOver(*_window->GetRendWindow())) {
+            _back->setBackColor(sf::Color::Red);
+            _back->setTextColor(sf::Color::Green);
         }
         _window->GetRendWindow()->draw(rounds);
         _window->GetRendWindow()->draw(bots);
         _window->GetRendWindow()->draw(user);
         _startGame->drawTo(*_window->GetRendWindow());
+        _back->drawTo(*_window->GetRendWindow());
         _textField->draw(*window.GetRendWindow());
         _textFieldBots->draw(*window.GetRendWindow());
         _textUser->draw(*window.GetRendWindow());
         _window->GetRendWindow()->display();
     } else {
+        sf::Font font;
+        if (!font.loadFromFile("./Textures/retro-land-mayhem.ttf")) {
+            return;
+        }
         _start->setFont(font);
         _settings->setFont(font);
         _exit->setFont(font);
@@ -147,12 +159,13 @@ void MainMenu::render(Window &window) {
         _exit->setTextColor(sf::Color::Yellow);
 
         _start->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f});
-        _settings->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + _start->getSize().y + 10});
-        _exit->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + 2 * _settings->getSize().y + 20});
+        _settings->setPosition(
+                {_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f + _start->getSize().y + 10});
+        _exit->setPosition({_window->GetWindowSize().x / 2.0f,
+                            _window->GetWindowSize().y / 2.0f + 2 * _settings->getSize().y + 20});
         sf::FloatRect titleRect = _title.getLocalBounds();
         _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
         _title.setPosition(_window->GetWindowSize().x / 2, _window->GetWindowSize().y / 6);
-
         this->_isExit = _exit->isMouseOver(*this->_window->GetRendWindow());
         this->_isSettings = _settings->isMouseOver(*this->_window->GetRendWindow());
         if (_start->isMouseOver(*this->_window->GetRendWindow())) {
@@ -185,9 +198,10 @@ void MainMenu::update(Window &window) {
     while (window.GetRendWindow()->pollEvent(e)) {
         if (e.Event::type == sf::Event::Closed)
             window.GetRendWindow()->close();
-        if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
-            window.GetRendWindow()->close();
-        if(e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::F5) {
+        if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape) {
+                window.setState(new Pause(&window, this, false));
+        }
+        if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::F5) {
             window.ToggleFullScreen();
             window.setState(new MainMenu(&window));
         }
@@ -210,8 +224,8 @@ void MainMenu::update(Window &window) {
                     round = std::stoi(_textField->getString());
                     bot = std::stoi(_textFieldBots->getString());
                     user = std::stoi(_textUser->getString());
-                    bool multyfruct = user > 1 ? true : false;
-                    window.setState(new Game(&window, bot, round, multyfruct)); 
+                    bool multyfruct = user > 1;
+                    window.setState(new Game(&window, bot, round, multyfruct));
                 }
             }
         }
@@ -228,13 +242,15 @@ void MainMenu::update(Window &window) {
             if (e.type == sf::Event::MouseButtonPressed)
                 window.setState(new Options(&window));
         }
+        if(this->_back->isMouseOver(*_window->GetRendWindow()) && e.type == sf::Event::MouseButtonPressed)
+            window.setState(new MainMenu(&window));
     }
 }
 
 void Options::render(Window &window) {
     window.GetRendWindow()->clear();
     sf::Font font;
-    if (!font.loadFromFile("Textures/arial.ttf")) {
+    if (!font.loadFromFile("Textures/retro-land-mayhem.ttf")) {
         return;
     }
     _save->setFont(font);
@@ -268,7 +284,7 @@ void Options::render(Window &window) {
 }
 
 void Options::update(Window &window) {
-    window.GetRendWindow()->clear(sf::Color::Cyan);
+    window.GetRendWindow()->clear();
     //render stuff
     sf::Event e;
     while (window.GetRendWindow()->pollEvent(e)) {
@@ -276,12 +292,23 @@ void Options::update(Window &window) {
             window.GetRendWindow()->close();
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
             window.GetRendWindow()->close();
-        if(e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::F5)
+        if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::F5)
             window.ToggleFullScreen();
         if (this->_isSave) {
-            if (e.type == sf::Event::MouseButtonPressed)
-                //отправить данные в конфиг
+            if (e.type == sf::Event::MouseButtonPressed) {
+                if(empty(this->_name->getString())){
+                    continue;
+                } else {
+                    std::cout << this->_name->getString();
+
+                }
                 window.setState(new MainMenu(&window));
+            }
+        }
+        if (e.type == sf::Event::MouseButtonReleased) {
+            _name->released(*window.GetRendWindow(), e);
+        } else {
+            _name->handleInput(e);
         }
         if (this->_isBack) {
             if (e.type == sf::Event::MouseButtonPressed)
@@ -292,8 +319,8 @@ void Options::update(Window &window) {
 
 Game::Game() {
     _window = nullptr;
-    _snake = Snake(0,false);
-    SnakeBot bot1 = SnakeBot(0,sf::Vector2i(-1,-1));
+    _snake = Snake(0, false);
+    SnakeBot bot1 = SnakeBot(0, sf::Vector2i(-1, -1));
     _bots.push_back(bot1);
     sf::Vector2u size(0, 0);
     _countOfBots =0;
@@ -301,12 +328,104 @@ Game::Game() {
     _text.Setup(1, 30, 350, sf::Vector2f(225, 0));
 }
 
+void Pause::render(Window &window) {
+    window.GetRendWindow()->clear(sf::Color::Green);
+    sf::Font font;
+    if (!font.loadFromFile("Textures/retro-land-mayhem.ttf")) {
+        return;
+    }
+
+    _title.setFont(font);
+    sf::FloatRect titleRect = _title.getLocalBounds();
+    _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
+    _title.setPosition(_window->GetWindowSize().x/2.0f, _window->GetWindowSize().y/3.0f);
+
+    json config = _window->getConfig();
+    sf::Vector2f size(config["button_width"], config["button_height"]);
+
+    if(_isPause){
+        _title.setString("Pause");
+        _return->setFont(font);
+        _restart->setFont(font);
+        _continue->setFont(font);
+
+        _return->setBackColor(sf::Color::Blue);
+        _return->setTextColor(sf::Color::Yellow);
+        _restart->setBackColor(sf::Color::Blue);
+        _restart->setTextColor(sf::Color::Yellow);
+        _continue->setBackColor(sf::Color::Blue);
+        _continue->setTextColor(sf::Color::Yellow);
+        _return->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f  -10+ 2*size.y*0.9f});
+        _restart->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f -5 +size.y*0.9f});
+        _continue->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f});
+
+        if(this->_continue->isMouseOver(*_window->GetRendWindow())){
+            _continue->setBackColor(sf::Color::Red);
+            _continue->setTextColor(sf::Color::Green);
+        }
+
+        if(this->_return->isMouseOver(*_window->GetRendWindow())){
+            _return->setBackColor(sf::Color::Red);
+            _return->setTextColor(sf::Color::Green);
+        }
+        if(this->_restart->isMouseOver(*_window->GetRendWindow())) {
+            _restart->setBackColor(sf::Color::Red);
+            _restart->setTextColor(sf::Color::Green);
+        }
+        _return->drawTo(*_window->GetRendWindow());
+        _restart->drawTo(*_window->GetRendWindow());
+        _continue->drawTo(*_window->GetRendWindow());
+    } else {
+        _title.setString("Do you want to quit the game?");
+        _exit->setFont(font);
+        _back->setFont(font);
+        _back->setBackColor(sf::Color::Blue);
+        _back->setTextColor(sf::Color::Yellow);
+        _back->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f});
+        _exit->setBackColor(sf::Color::Blue);
+        _exit->setTextColor(sf::Color::Yellow);
+        _exit->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f -5 + size.y*0.9f});
+        if(this->_exit->isMouseOver(*_window->GetRendWindow())){
+            _exit->setBackColor(sf::Color::Red);
+            _exit->setTextColor(sf::Color::Green);
+        }
+        if(this->_back->isMouseOver(*_window->GetRendWindow())){
+            _back->setBackColor(sf::Color::Red);
+            _back->setTextColor(sf::Color::Green);
+        }
+        _exit->drawTo(*_window->GetRendWindow());
+        _back->drawTo(*_window->GetRendWindow());
+
+    }
+
+    window.GetRendWindow()->draw(_title);
+    window.GetRendWindow()->display();
+}
+
+void Pause::update(Window& window){
+    window.GetRendWindow()->clear();
+    sf::Event event;
+    while (window.GetRendWindow()->pollEvent(event)) {
+        if (event.Event::type == sf::Event::Closed)
+            window.GetRendWindow()->close();
+        if (this->_return->isMouseOver(*_window->GetRendWindow()) && event.type == sf::Event::MouseButtonPressed)
+            _window->setState(new MainMenu(_window));
+        if ((this->_continue->isMouseOver(*_window->GetRendWindow()) && event.type == sf::Event::MouseButtonPressed) ||
+                (this->_back->isMouseOver(*_window->GetRendWindow()) && event.type == sf::Event::MouseButtonPressed))
+            _window->setState(_previous);
+        if (this->_restart->isMouseOver(*_window->GetRendWindow()) && event.type == sf::Event::MouseButtonPressed)
+            _window->setState(_previous);
+        if (this->_exit->isMouseOver(*_window->GetRendWindow()) && event.type == sf::Event::MouseButtonPressed)
+            _window->GetRendWindow()->close();
+    };
+}
+
 SnakeBot &Game::getSnakeBot(int i) {
     return _bots[i];
 }
 
-Game::Game(Window *window , int countOfBots, int rounds ,bool is_multiplay) {
-    _rounds=rounds;
+Game::Game(Window *window, int countOfBots, int rounds, bool is_multiplay) {
+    _rounds = rounds;
     _window = window;
     _world = World(_window->GetWindowSize());
     _snake = Snake(_world.GetBlockSize(),false);
@@ -323,17 +442,18 @@ Game::Game(Window *window , int countOfBots, int rounds ,bool is_multiplay) {
     for (auto itr = fromSnake.begin(); itr < fromSnake.end(); ++itr) {
         res.push_back(*itr);
     }
-    _is_multiplayer =is_multiplay;
-    if(_is_multiplayer){
-        _player2_snake = Snake(_world.GetBlockSize(),is_multiplay);
+    _is_multiplayer = is_multiplay;
+    if (_is_multiplayer) {
+        _player2_snake = Snake(_world.GetBlockSize(), is_multiplay);
         std::vector<sf::Vector2i> fromSecondSnake = _player2_snake.getBodySnake();
-    for (auto itr = fromSecondSnake.begin(); itr < fromSecondSnake.end(); ++itr) {
+        for (auto itr = fromSecondSnake.begin(); itr < fromSecondSnake.end(); ++itr) {
             res.push_back(*itr);
         }
     }else _player2_snake =Snake(0,true);
 
     _text.Setup(1, 30, _window->GetWindowSize().x, sf::Vector2f(0, _window->GetWindowSize().y - 50));
     this->CreateAllBots(window,_world.GetBlockSize(),res,countOfBots);
+
 }
 
 
@@ -349,7 +469,7 @@ std::vector<sf::Vector2i> Game::get_game_items() {
     for (auto itr = fromSnake.begin(); itr < fromSnake.end(); ++itr) {
         res.push_back(*itr);
     }
-    if(_is_multiplayer) {
+    if (_is_multiplayer) {
         std::vector<sf::Vector2i> fromSecondSnake = _player2_snake.getBodySnake();
         for (auto itr = fromSecondSnake.begin(); itr < fromSecondSnake.end(); ++itr) {
             res.push_back(*itr);
@@ -375,10 +495,10 @@ void Game::render(Window &window) {
     window.GetRendWindow()->clear();
     _world.Render(*_window->GetRendWindow());
     _snake.Render(*_window->GetRendWindow());
-    if(_is_multiplayer)
-    _player2_snake.Render(*_window->GetRendWindow());
-    for(auto itr = _bots.begin();itr != _bots.end();++itr)
-    itr->Render(*_window->GetRendWindow());
+    if (_is_multiplayer)
+        _player2_snake.Render(*_window->GetRendWindow());
+    for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
+        itr->Render(*_window->GetRendWindow());
     _text.Add(std::to_string(_firstRounds));
     _text.Render(*_window->GetRendWindow());
     _window->GetRendWindow()->display();
@@ -392,10 +512,8 @@ void Game::update(Window &window) {
     while (window.GetRendWindow()->pollEvent(event)) {
         if (event.Event::type == sf::Event::Closed)
             _window->GetRendWindow()->close();
-        if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::M)
-            _window->setState(new MainMenu(_window));
         if (event.Event::KeyPressed && event.Event::key.code == sf::Keyboard::Escape)
-            _window->GetRendWindow()->close();
+            window.setState(new Pause(&window, this, true));
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)
             && _snake.GetPhysicalDirection() != Direction::Down) {
             _snake.SetDirection(Direction::Up);
@@ -409,7 +527,7 @@ void Game::update(Window &window) {
                    && _snake.GetPhysicalDirection() != Direction::Left) {
             _snake.SetDirection(Direction::Right);
         }
-        if(_is_multiplayer) {
+        if (_is_multiplayer) {
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)
                 && _player2_snake.GetPhysicalDirection() != Direction::Down) {
                 _player2_snake.SetDirection(Direction::Up);
@@ -449,18 +567,18 @@ void Game::update(Window &window) {
                 itr->CheckCollision(allItems);}
 
 
-            //_bots[0].ChangeDirection(this->_world.getApplePostition());
+        //_bots[0].ChangeDirection(this->_world.getApplePostition());
 
-            _world.Update(_snake, _player2_snake, _bots, allItems);
-            _elapsed -= sf::seconds(timestepMainSnake);
+        _world.Update(_snake, _player2_snake, _bots, allItems);
+        _elapsed -= sf::seconds(timestepMainSnake);
 
-            if (_is_multiplayer) {
-                /**/
+        if (_is_multiplayer) {
+            /**/
 
-                for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
-                    if (itr->HasLost()) {
-                        itr->Disappear();
-                    }
+            for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
+                if (itr->HasLost()) {
+                    itr->Disappear();
+                }
 
                 if (_snake.HasLost() || _player2_snake.HasLost()) {
                     if (_snake.HasLost()) _secondRounds++;
@@ -482,6 +600,7 @@ void Game::update(Window &window) {
                 if (_snake.HasLost()) {
                     _snake.Reset(false);
                 }
+
             for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
                 if (itr->HasLost()) {
                     itr->Disappear();
@@ -528,8 +647,8 @@ void Game::CreateAllBots(Window *window, int blockSIze, std::vector<sf::Vector2i
 }
 
 
-Snake::Snake(int l_blockSize,bool is_multy) {
-    if(l_blockSize ==0){
+Snake::Snake(int l_blockSize, bool is_multy) {
+    if (l_blockSize == 0) {
         _snakeBody.clear();
         return;
     }
@@ -542,11 +661,11 @@ Snake::~Snake() {}
 
 void Snake::Reset(bool is_multy) {
     _snakeBody.clear();
-    if(!is_multy) {
+    if (!is_multy) {
         _snakeBody.push_back(SnakeSegment(5, 7));
         _snakeBody.push_back(SnakeSegment(5, 6));
         _snakeBody.push_back(SnakeSegment(5, 5));
-    }else {
+    } else {
         _snakeBody.push_back(SnakeSegment(15, 7));
         _snakeBody.push_back(SnakeSegment(15, 6));
         _snakeBody.push_back(SnakeSegment(15, 5));
@@ -558,7 +677,7 @@ void Snake::Reset(bool is_multy) {
     _lost = false;
 }
 
-void Snake::Disapear(){
+void Snake::Disapear() {
     _snakeBody.clear();
 };
 
@@ -1111,7 +1230,8 @@ sf::Vector2i World::getApplePosition() {
     return _item;
 }
 
-void World::Update(Snake &l_player,Snake &l_second_player ,std::vector<SnakeBot> &bots ,std::vector<sf::Vector2i> items) {
+void
+World::Update(Snake &l_player, Snake &l_second_player, std::vector<SnakeBot> &bots, std::vector<sf::Vector2i> items) {
 
     if (l_player.GetPosition() == _item) {
         l_player.Extend();
@@ -1204,7 +1324,7 @@ void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_s
     _numVisible = l_visible;
 
     sf::Vector2f offset(2.0f, 2.0f);
-    _font.loadFromFile("Textures/arial.ttf");
+    _font.loadFromFile("Textures/retro-land-mayhem.ttf");
     _content.setFont(_font);
     _content.setString("score::");
     _content.setCharacterSize(l_charSize);
@@ -1238,7 +1358,7 @@ void Textbox::Render(sf::RenderWindow &l_wind) {
     _content.setString(l_content);
     l_wind.draw(_backdrop);
     l_wind.draw(_content);
-   // }
+    // }
 }
 
 

@@ -263,6 +263,10 @@ public:
         _text.setFont(fonts);
     }
 
+    void setText(std::string str){
+        _text.setString(str);
+    }
+
     sf::Vector2f getSize(){
         sf::Vector2f size = {_btnWidth, _btnHeight};
         return size;
@@ -324,7 +328,7 @@ public:
             _position(position),
             _hasfocus(false)
     {
-        _font.loadFromFile("Textures/arial.ttf");
+        _font.loadFromFile("Textures/retro-land-mayhem.ttf");
         _rect.setOutlineThickness(2);
         _rect.setFillColor(sf::Color::White);
         _rect.setOutlineColor(sf::Color(127,127,127));
@@ -395,10 +399,11 @@ class Options : public State {
 public:
     Options(Window* window) {
         _window = window;
-
-        sf::Vector2f size = {250, 80};
-        _save = new Button("Save", size, 30, sf::Color::Blue, sf::Color::Yellow);
-        _back = new Button("Back", size, 30, sf::Color::Blue, sf::Color::Yellow);
+        json config = _window->getConfig();
+        sf::Vector2f size = {config["button_width"], config["button_height"]};
+        int charSize = config["character_size"];
+        _save = new Button("Save", size, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _back = new Button("Back", size, charSize, sf::Color::Blue, sf::Color::Yellow);
 
         _name = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
 
@@ -429,16 +434,18 @@ public:
         _window = window;
         json config = _window->getConfig();
         sf::Vector2f size = {config["button_width"], config["button_height"]};
-        _start = new Button("Start", size, 32, sf::Color::Blue, sf::Color::Yellow);
-        _startGame = new Button("Start Game", size, 32, sf::Color::Blue, sf::Color::Yellow);
-        _settings = new Button("Settings", size, 32, sf::Color::Blue, sf::Color::Yellow);
-        _exit = new Button("Exit", size, 32, sf::Color::Blue, sf::Color::Yellow);
+        int charSize = config["character_size"];
+        _start = new Button("Start", size, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _startGame = new Button("Start Game", size, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _settings = new Button("Settings", size, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _exit = new Button("Exit", size, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _back = new Button("Back", size, charSize, sf::Color::Blue, sf::Color::Yellow);
         _textField = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
         _textFieldBots = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 2.0f*_window->GetWindowSize().y/6.0f });
         _textUser = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 3.0f*_window->GetWindowSize().y/6.0f });
 
 
-        _title.setCharacterSize(44);
+        _title.setCharacterSize(charSize+10);
         _title.setString("The Best Snake");
         _title.setFillColor(sf::Color::White);
 
@@ -447,7 +454,6 @@ public:
     void render(Window &window) override;
 
     void update(Window &window) override;
-
 private:
     Window* _window;
     sf::Text _title;
@@ -455,6 +461,7 @@ private:
     Button* _startGame;
     Button* _settings;
     Button* _exit;
+    Button* _back;
     TextField* _textField;
     TextField* _textFieldBots;
     TextField* _textUser;
@@ -462,6 +469,49 @@ private:
     bool _isStart = false;
     bool _isSettings = false;
     bool _isExit = false;
+};
+
+class Pause: public State{
+public:
+    Pause(Window* window, State* previous, bool pause){
+        _isPause  = pause;
+        _window = window;
+        _previous = previous;
+        json config = _window->getConfig();
+        sf::Vector2f size(config["pause_width"], config["pause_height"]);
+        int charSize = config["character_size"];
+
+        _return = new Button("Return", size*0.9f, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+        _continue = new Button("Continue", size*0.9f, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+        _back = new Button("Back", size*0.9f, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+        _restart = new Button("Restart", size*0.9f, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+        _exit = new Button("Exit", size*0.9f, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+
+        _title.setCharacterSize(charSize + 5);
+        _title.setFillColor(sf::Color::White);
+
+    }
+
+    void render(Window& window) override;
+
+    void update(Window& window) override;
+
+    ~Pause(){
+        delete _previous;
+    }
+
+private:
+    Window* _window;
+    State* _previous;
+    sf::Text _title;
+
+    Button* _back;
+    Button* _return;
+    Button* _continue;
+    Button* _restart;
+    Button* _exit;
+
+    bool _isPause;
 };
 
 
