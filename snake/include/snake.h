@@ -117,6 +117,10 @@ public:
 
 
     void CheckCollision(std::vector<sf::Vector2i> items);
+
+    void setTexture(sf::Texture& texture){
+        _bodyRect.setTexture(texture);
+    }
 private:
     SnakeContainer _snakeBody;
     int _size;
@@ -124,7 +128,7 @@ private:
     int _speed;
     int _score;
     bool _lost;
-    sf::RectangleShape _bodyRect; // Shape used in rendering
+    sf::Sprite _bodyRect; // Shape used in rendering
 };
 
 class SnakeBot{
@@ -180,11 +184,15 @@ public:
 
     std::vector<sf::Vector2i> get_world_items();
 
+    void setSprite(sf::Texture& texture){
+        _appleShape.setTexture(texture);
+    }
+
 private:
     sf::Vector2u _windowSize;
     sf::Vector2i _item;
     int _blockSize;
-    sf::CircleShape _appleShape;
+    sf::Sprite _appleShape;
     std::vector<sf::Vector2i> _stonesPos;
    // sf::RectangleShape _stone;
     std::vector<sf::RectangleShape> _stoneShape;
@@ -246,14 +254,9 @@ public:
 
 class Button {
 public:
-    Button(std::string btnText, sf::Vector2f buttonSize, int charSize, sf::Color bgColor, sf::Color textColor) {
-        _button.setSize(buttonSize);
-        _button.setFillColor(bgColor);
-
-        // Get these for later use:
-        _btnWidth = buttonSize.x;
-        _btnHeight = buttonSize.y;
-
+    Button(std::string btnText, sf::Vector2f scale, int charSize, sf::Color bgColor, sf::Color textColor) {
+        _button.setColor(bgColor);
+        _button.setScale(scale);
         _text.setString(btnText);
         _text.setCharacterSize(charSize);
         _text.setFillColor(textColor);
@@ -262,6 +265,12 @@ public:
     // Pass font by reference:
     void setFont(sf::Font &fonts) {
         _text.setFont(fonts);
+    }
+
+    void setTexture(sf::Texture& texture){
+        _button.setTexture(texture);
+        _btnWidth = texture.getSize().x;
+        _btnHeight = texture.getSize().y;
     }
 
     void setText(std::string str){
@@ -274,7 +283,7 @@ public:
     }
 
     void setBackColor(sf::Color color) {
-        _button.setFillColor(color);
+        _button.setColor(color);
     }
 
     void setTextColor(sf::Color color) {
@@ -310,11 +319,8 @@ public:
         return mouseX < btnxPosWidth && mouseX > btnPosX && mouseY < btnyPosHeight && mouseY > btnPosY;
     }
 
-    sf::RectangleShape getButton(){
-        return _button;
-    }
 private:
-    sf::RectangleShape _button;
+    sf::Sprite _button;
     sf::Text _text;
 
     float _btnWidth;
@@ -396,34 +402,104 @@ private:
     bool _hasfocus;
 };
 
+class PopUp{
+public:
+    PopUp(std::vector<std::string> text, int charSize, sf::Vector2f size, sf::Vector2f position){
+        for(size_t i = 0; i < 3; ++i){
+            sf::FloatRect titleRect = _text[i].getLocalBounds();
+            _text[i].setOrigin(titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f);
+            _text[i].setPosition(position);
+            _rect[i].setSize(size);
+            _rect[i].setOrigin(size.x/2, size.y/2);
+            _rect[i].setPosition({position.x, position.y + i*(size.y)});
+            _text[i].setString(text[i]);
+            _text[i].setCharacterSize(charSize);
+            _rect[i].setFillColor(sf::Color::White);
+            _rect[i].setOutlineThickness(2);
+            _rect[i].setOutlineColor(sf::Color(127,127,127));
+        }
+    }
+
+    void setFont(sf::Font& font){
+        for(size_t i = 0; i<3; ++i){
+            _text[i].setFont(font);
+        }
+    }
+
+    void draw(sf::RenderWindow& window){
+        window.draw(_rect[0]);
+        window.draw(_text[0]);
+    }
+
+    void released(sf::RenderWindow& window){
+        for(size_t  i = 0; i < 3; ++i){
+            window.draw(_rect[i]);
+        }
+    }
+
+
+private:
+    sf::RectangleShape _rect[3];
+    sf::Text _text[3];
+};
+
 class Options : public State {
 public:
     Options(Window* window) {
         _window = window;
         json config = _window->getConfig();
-        sf::Vector2f size = {config["button_width"], config["button_height"]};
+        sf::Vector2f scale = {config["button_width"], config["button_height"]};
         int charSize = config["character_size"];
-        _save = new Button("Save", size, charSize, sf::Color::Blue, sf::Color::Yellow);
-        _back = new Button("Back", size, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _save = new Button("Save", scale, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _back = new Button("Back", scale, charSize, sf::Color::Blue, sf::Color::Yellow);
+        //_windowSize = new PopUp()
+        for(size_t i = 0 ; i < 5;++i){
+            _color[i].setSize({scale.x*300/6, scale.x*300/6});
+            _color[i].setOrigin(_color->getSize().x/2, _color->getSize().y/2);
+            _color[i].setOutlineColor(sf::Color(127, 127, 127));
+            _color[i].setOutlineThickness(2.0f);
+        }
+        _color[0].setFillColor(sf::Color::Green);
+        _color[1].setFillColor(sf::Color::Red);
+        _color[2].setFillColor(sf::Color::Blue);
+        _color[3].setFillColor(sf::Color::Magenta);
+        _color[4].setFillColor(sf::Color::Cyan);
 
-        _name = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
+
+        _name = new TextField(charSize*1.1, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
 
     }
 
     void render(Window &window) override;
 
     void update(Window &window) override;
+
+    bool isMouseOver(sf::RenderWindow &window, sf::RectangleShape rect) {
+        int mouseX = sf::Mouse::getPosition(window).x;
+        int mouseY = sf::Mouse::getPosition(window).y;
+
+        int btnPosX = rect.getPosition().x - rect.getSize().x/2.0f;
+        int btnPosY = rect.getPosition().y - rect.getSize().y/2.0f;
+
+        int btnxPosWidth = rect.getPosition().x + rect.getSize().x/2.0f;
+        int btnyPosHeight = rect.getPosition().y + rect.getSize().y/2.0f;
+
+
+        return mouseX < btnxPosWidth && mouseX > btnPosX && mouseY < btnyPosHeight && mouseY > btnPosY;
+    }
+
 private:
     Window* _window;
     Button* _save;
     Button* _back;
+    sf::RectangleShape _color[5];
+    PopUp* _windowSize;
 
     TextField* _name;
-    TextField* _color;
-    TextField* _windowSize;
 
     bool _isSave;
     bool _isBack;
+    bool _hasFocus = false;
 };
 
 
@@ -434,13 +510,13 @@ public:
     MainMenu(Window* window){
         _window = window;
         json config = _window->getConfig();
-        sf::Vector2f size = {config["button_width"], config["button_height"]};
+        sf::Vector2f scale = {config["button_width"], config["button_height"]};
         int charSize = config["character_size"];
-        _start = new Button("Start", size, charSize, sf::Color::Blue, sf::Color::Yellow);
-        _startGame = new Button("Start Game", size, charSize, sf::Color::Blue, sf::Color::Yellow);
-        _settings = new Button("Settings", size, charSize, sf::Color::Blue, sf::Color::Yellow);
-        _exit = new Button("Exit", size, charSize, sf::Color::Blue, sf::Color::Yellow);
-        _back = new Button("Back", size, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _start = new Button("Start",scale,  charSize, sf::Color::Blue, sf::Color::Yellow);
+        _startGame = new Button("Start Game",scale,  charSize, sf::Color::Blue, sf::Color::Yellow);
+        _settings = new Button("Settings",scale,  charSize, sf::Color::Blue, sf::Color::Yellow);
+        _exit = new Button("Exit", scale, charSize, sf::Color::Blue, sf::Color::Yellow);
+        _back = new Button("Back",scale,  charSize, sf::Color::Blue, sf::Color::Yellow);
         _textField = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, _window->GetWindowSize().y/6.0f });
         _textFieldBots = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 2.0f*_window->GetWindowSize().y/6.0f });
         _textUser = new TextField(30, {3.0f*_window->GetWindowSize().x/4.0f, 3.0f*_window->GetWindowSize().y/6.0f });
@@ -480,14 +556,15 @@ public:
         _window = window;
         _previous = previous;
         json config = _window->getConfig();
-        sf::Vector2f size(config["pause_width"], config["pause_height"]);
+        sf::Vector2f scale(config["pause_width"], config["pause_height"]);
+
         int charSize = config["character_size"];
 
-        _return = new Button("Return", size*0.9f, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
-        _continue = new Button("Continue", size*0.9f, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
-        _back = new Button("Back", size*0.9f, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
-        _restart = new Button("Restart", size*0.9f, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
-        _exit = new Button("Exit", size*0.9f, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+        _return = new Button("Return",scale,  charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+        _continue = new Button("Continue",scale,  charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+        _back = new Button("Back",scale,  charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+        _restart = new Button("Restart", scale,  charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+        _exit = new Button("Exit",scale, charSize - 4,sf::Color::Blue, sf::Color::Yellow);
 
         _title.setCharacterSize(charSize + 5);
         _title.setFillColor(sf::Color::White);
