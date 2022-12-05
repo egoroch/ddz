@@ -113,7 +113,7 @@ public:
 
     void Move();
     void Tick();
-    void Render(sf::RenderWindow& l_window);
+    void Render(sf::RenderWindow& l_window,bool whichSnake);
 
 
     void CheckCollision(std::vector<sf::Vector2i> items);
@@ -157,13 +157,16 @@ public:
     void Render(sf::RenderWindow& l_window);
 
     void CheckCollision(std::vector<sf::Vector2i> items);
+    void setTexture(sf::Texture& texture){
+        _bodyRect.setTexture(texture);
+    }
 private:
     SnakeContainer _snakeBody;
     int _size;
     Direction _dir;
     int _speed;
     bool _lost;
-    sf::RectangleShape _bodyRect; // Shape used in rendering
+    sf::Sprite _bodyRect; // Shape used in rendering
 };
 
 

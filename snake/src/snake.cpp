@@ -523,9 +523,9 @@ Game::~Game() {
 void Game::render(Window &window) {
     window.GetRendWindow()->clear();
     _world.Render(*_window->GetRendWindow());
-    _snake.Render(*_window->GetRendWindow());
+    _snake.Render(*_window->GetRendWindow(),true);
     if (_is_multiplayer)
-        _player2_snake.Render(*_window->GetRendWindow());
+        _player2_snake.Render(*_window->GetRendWindow(),false);
     for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
         itr->Render(*_window->GetRendWindow());
 
@@ -867,17 +867,40 @@ void Snake::CheckCollision(std::vector<sf::Vector2i> items) {
     }
 }
 
-void Snake::Render(sf::RenderWindow &l_window) {
+void Snake::Render(sf::RenderWindow &l_window,bool whichSnake) {
     if (_snakeBody.empty()) { return; }
 
     sf::Texture body;
     body.loadFromFile("./picture/body.png");
+    sf::Texture headUp;
+    headUp.loadFromFile("./picture/headUp.png");
+    sf::Texture headDown;
+    headDown.loadFromFile("./picture/headDown.png");
+    sf::Texture headLeft;
+    headLeft.loadFromFile("./picture/headLeft.png");
+    sf::Texture headRight;
+    headRight.loadFromFile("./picture/headRight.png");
 
-    sf::Texture header;
-    header.loadFromFile("./picture/head.png");
+    if(whichSnake){
+    _bodyRect.setColor(sf::Color::Green);
+    }else _bodyRect.setColor(sf::Color::Red);
 
     auto head = _snakeBody.begin();
-    _bodyRect.setTexture(header);
+
+    if(_dir == Direction::Up){
+
+    _bodyRect.setTexture(headUp);}
+    if(_dir == Direction::Down){
+
+        _bodyRect.setTexture(headDown);}
+    if(_dir == Direction::Left){
+
+        _bodyRect.setTexture(headLeft);}
+    if(_dir == Direction::Right){
+
+        _bodyRect.setTexture(headRight);}
+    if(_dir == Direction::None){
+        _bodyRect.setTexture(headDown);}
     _bodyRect.setPosition(head->position.x * _size, head->position.y * _size);
     l_window.draw(_bodyRect);
 
@@ -895,7 +918,7 @@ SnakeBot::SnakeBot(int l_blockSize, sf::Vector2i headPos) {
        return;
     }
     _size = l_blockSize;
-    _bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
+   // _bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
     Reset(headPos);
 }
 
@@ -1233,13 +1256,16 @@ void SnakeBot::CheckCollision(std::vector<sf::Vector2i> items) {
 
 void SnakeBot::Render(sf::RenderWindow &l_window) {
     if (_snakeBody.empty()) { return; }
-
+    sf::Texture body;
+    body.loadFromFile("./picture/body.png");
     auto head = _snakeBody.begin();
-    _bodyRect.setFillColor(sf::Color::Yellow);
+
+   // _bodyRect.setFillColor(sf::Color::Yellow);
+   _bodyRect.setTexture(body);
     _bodyRect.setPosition(head->position.x * _size, head->position.y * _size);
     l_window.draw(_bodyRect);
 
-    _bodyRect.setFillColor(sf::Color::Yellow);
+    //_bodyRect.setFillColor(sf::Color::Yellow);
     for (auto itr = _snakeBody.begin() + 1; itr != _snakeBody.end(); ++itr) {
         _bodyRect.setPosition(itr->position.x * _size, itr->position.y * _size);
         l_window.draw(_bodyRect);
