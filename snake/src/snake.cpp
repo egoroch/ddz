@@ -506,7 +506,7 @@ void Game::render(Window &window) {
             isWinFirst=true;
     if(_secondRounds > (_rounds/2))
         isWinSecond =true;
-    _text.Add(_is_multiplayer,std::to_string(_firstRounds),std::to_string(_secondRounds),std::to_string(_snake.GetScore()),std::to_string(_player2_snake.GetScore()), isWinFirst , isWinSecond,_rounds);
+    _text.Add(_is_multiplayer,_countOfBots,std::to_string(_firstRounds),std::to_string(_secondRounds),std::to_string(_snake.GetScore()),std::to_string(_player2_snake.GetScore()), isWinFirst , isWinSecond,_rounds);
     _text.Render(*_window->GetRendWindow());
     _window->GetRendWindow()->display();
     this->RestartClock();
@@ -515,6 +515,7 @@ void Game::render(Window &window) {
 }
 
 void Game::update(Window &window) {
+    std::cout << "in update "<<'\n';
     sf::Event event;
     while (window.GetRendWindow()->pollEvent(event)) {
         if (event.Event::type == sf::Event::Closed)
@@ -550,6 +551,8 @@ void Game::update(Window &window) {
             }
         }
     }
+    std::cout<<" before rimesteps  "<<'\n';
+
     float timestepMainSnake = 1.0f / _snake.GetSpeed();
 
     if (_elapsed.asSeconds() >= timestepMainSnake) {
@@ -558,21 +561,27 @@ void Game::update(Window &window) {
         _snake.Tick();
         if (_is_multiplayer){
             _player2_snake.Tick();}
-        std::vector<sf::Vector2i> allItems = this->get_game_items();
-        for (auto itr = _bots.begin() + 1; itr != _bots.end(); ++itr)
-            itr->Tick(_world.getApplePosition(), allItems, _snake.GetDirection(),_player2_snake.GetDirection());
-        _bots.begin()->Tick(sf::Vector2i(_snake.GetPosition().x + 2, _snake.GetPosition().y), allItems,
-                            _snake.GetDirection(),_player2_snake.GetDirection());
-        allItems.clear();
-        allItems = this->get_game_items();
 
+
+        std::vector<sf::Vector2i> allItems = this->get_game_items();
+        std::cout<<"before create all botrs3 "<<'\n';
+        if(_countOfBots) {
+            for (auto itr = _bots.begin() + 1; itr != _bots.end(); ++itr)
+                itr->Tick(_world.getApplePosition(), allItems, _snake.GetDirection(), _player2_snake.GetDirection());
+            _bots.begin()->Tick(sf::Vector2i(_snake.GetPosition().x + 2, _snake.GetPosition().y), allItems,
+                                _snake.GetDirection(), _player2_snake.GetDirection());
+        }
+
+       // allItems.clear();
+        allItems = this->get_game_items();
+        std::cout<<"before create all botrs3.5 "<<'\n';
         _snake.CheckCollision(allItems);
         if (_is_multiplayer) {
             _player2_snake.CheckCollision(allItems);
         }
             for (auto itr = _bots.begin(); itr != _bots.end(); ++itr){
                 itr->CheckCollision(allItems);}
-
+        std::cout<<"before create all botrs4 "<<'\n';
 
         //_bots[0].ChangeDirection(this->_world.getApplePostition());
 
@@ -1362,7 +1371,7 @@ void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_s
     _backdrop.setPosition(l_screenPos);
 }
 
-void Textbox::Add(bool multy,std::string l_roundFirst,std::string l_rounds_second,std::string score_first,std::string score_second,bool win1 ,bool win2, int rounds) {
+void Textbox::Add(bool multy,int countOfBots,std::string l_roundFirst,std::string l_rounds_second,std::string score_first,std::string score_second,bool win1 ,bool win2, int rounds) {
     std::string message ="";
     std::string firstWin = "";
     std::string SecondWin = "";
@@ -1381,7 +1390,10 @@ void Textbox::Add(bool multy,std::string l_roundFirst,std::string l_rounds_secon
         if(stoi(l_roundFirst)+stoi(l_rounds_second) >= rounds)
             firstWin = " end of game ";
     }
+    if(countOfBots)
     message += "score of first :" + score_first + " round : " + l_roundFirst + firstWin +'\n';
+    else
+        message += "score of first :" + score_first +'\n';
     if(multy)
     message += "score of second :" + score_second + " round : " + l_rounds_second + SecondWin +'\n';
     _messages.push_back(message);

@@ -199,7 +199,7 @@ public:
 
     void Setup(int l_visible, int l_charSize,int l_width,sf::Vector2f l_screenPos);
 
-    void Add(bool multi,std::string l_message,std::string l_messag1e,std::string l_mess12age,std::string l_me3ssage, bool win1 ,bool win2,int rounds);
+    void Add(bool multi,int countOfBots,std::string l_message,std::string l_messag1e,std::string l_mess12age,std::string l_me3ssage, bool win1 ,bool win2,int rounds);
     void Clear();
 
     void Render(sf::RenderWindow& l_wind);
