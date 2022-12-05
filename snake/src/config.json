@@ -1,0 +1,29 @@
+{
+  "default" : {
+    "window_width" : 1280,
+    "window_height" : 720,
+    "button_width" : 1,
+    "button_height" : 1,
+    "pause_width" : 0.9,
+    "pause_height" : 0.9,
+    "character_size" : 30
+  },
+  "fullScreen" : {
+    "window_width" : 1920,
+    "window_height" : 1080,
+    "button_width" : 1.5,
+    "button_height" : 1.3,
+    "pause_width" : 1.3,
+    "pause_height" : 1.3,
+    "character_size" : 40
+  },
+  "mini" : {
+    "window_width" : 680,
+    "window_height" : 450,
+    "button_width" : 0.8,
+    "button_height" : 0.8,
+    "pause_width" : 0.6,
+    "pause_height" : 0.6,
+    "character_size" : 26
+  }
+}
