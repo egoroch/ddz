@@ -36,6 +36,7 @@ Window::Window() {
     Setup("Snake", sf::Vector2u(1280, 720));
 }
 
+
 Window::Window(const std::string &title, const sf::Vector2u &size, json config, State *state) {
     Setup(title, size);
     _config = config;
@@ -57,6 +58,7 @@ void Window::Destroy() {
     _rend_window.close();
     //delete _state;
 }
+
 
 void Window::ToggleFullScreen() {
     _isFullScreen = !_isFullScreen;
@@ -515,7 +517,7 @@ void Game::render(Window &window) {
 }
 
 void Game::update(Window &window) {
-    std::cout << "in update "<<'\n';
+   // std::cout << "in update "<<'\n';
     sf::Event event;
     while (window.GetRendWindow()->pollEvent(event)) {
         if (event.Event::type == sf::Event::Closed)
@@ -551,12 +553,16 @@ void Game::update(Window &window) {
             }
         }
     }
-    std::cout<<" before rimesteps  "<<'\n';
+   // std::cout<<" before rimesteps  "<<'\n';
 
     float timestepMainSnake = 1.0f / _snake.GetSpeed();
-
+    /////pauese nicetry
+    if(window.getIsPause())
+    {
+        _elapsed = sf::seconds(-2);
+        window.setIsPause(false);
+    }
     if (_elapsed.asSeconds() >= timestepMainSnake) {
-
 
         _snake.Tick();
         if (_is_multiplayer){
@@ -564,29 +570,31 @@ void Game::update(Window &window) {
 
 
         std::vector<sf::Vector2i> allItems = this->get_game_items();
-        std::cout<<"before create all botrs3 "<<'\n';
+        //std::cout<<"before create all botrs3 "<<'\n';
         if(_countOfBots) {
-            for (auto itr = _bots.begin() + 1; itr != _bots.end(); ++itr)
+            for (auto itr = _bots.begin() + 1; itr != _bots.end(); ++itr) {
                 itr->Tick(_world.getApplePosition(), allItems, _snake.GetDirection(), _player2_snake.GetDirection());
+            }
             _bots.begin()->Tick(sf::Vector2i(_snake.GetPosition().x + 2, _snake.GetPosition().y), allItems,
                                 _snake.GetDirection(), _player2_snake.GetDirection());
         }
 
        // allItems.clear();
         allItems = this->get_game_items();
-        std::cout<<"before create all botrs3.5 "<<'\n';
+        //std::cout<<"before create all botrs3.5 "<<'\n';
         _snake.CheckCollision(allItems);
         if (_is_multiplayer) {
             _player2_snake.CheckCollision(allItems);
         }
             for (auto itr = _bots.begin(); itr != _bots.end(); ++itr){
                 itr->CheckCollision(allItems);}
-        std::cout<<"before create all botrs4 "<<'\n';
+       // std::cout<<"before create all botrs4 "<<'\n';
 
         //_bots[0].ChangeDirection(this->_world.getApplePostition());
 
         _world.Update(_snake, _player2_snake, _bots, allItems);
-        _elapsed -= sf::seconds(timestepMainSnake);
+        //_elapsed -= sf::seconds(timestepMainSnake);
+        _elapsed = sf::seconds(0);
 
         if (_is_multiplayer) {
             /**/

@@ -51,6 +51,7 @@ private:
     void Create();
 
     void Setup(const std::string &title, const sf::Vector2u &size);
+    bool _is_Pause;
 
 public:
     Window();
@@ -62,9 +63,9 @@ public:
     sf::RenderWindow *GetRendWindow();
 
     bool IsFullScreen();
-
     sf::Vector2u GetWindowSize();
-
+    bool getIsPause(){return _is_Pause;}
+    void setIsPause(bool a){_is_Pause=a;}
     json getConfig() { return _currentConfig; };
 
     void ToggleFullScreen();
@@ -474,6 +475,7 @@ private:
 class Pause: public State{
 public:
     Pause(Window* window, State* previous, bool pause){
+        window->setIsPause(true) ;
         _isPause  = pause;
         _window = window;
         _previous = previous;
