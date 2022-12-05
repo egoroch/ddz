@@ -1390,7 +1390,7 @@ void Textbox::Add(bool multy,int countOfBots,std::string l_roundFirst,std::strin
         if(stoi(l_roundFirst)+stoi(l_rounds_second) >= rounds)
             firstWin = " end of game ";
     }
-    if(countOfBots)
+    if((countOfBots != 0) || multy)
     message += "score of first :" + score_first + " round : " + l_roundFirst + firstWin +'\n';
     else
         message += "score of first :" + score_first +'\n';
