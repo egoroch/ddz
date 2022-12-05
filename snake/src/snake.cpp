@@ -623,6 +623,7 @@ void Game::update(Window &window) {
 
                 if (_snake.HasLost()) {
                     _snake.Reset(false);
+                    _secondRounds++;
                 }
             int deadSnakes =0;
             for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
@@ -632,7 +633,6 @@ void Game::update(Window &window) {
                 }
             if(deadSnakes == _countOfBots)
                 _firstRounds++;
-            if (_snake.HasLost()) _secondRounds++;
             if (_player2_snake.HasLost()) _firstRounds++;
         }
     }
@@ -1395,15 +1395,25 @@ void Textbox::Add(bool multy,int countOfBots,std::string l_roundFirst,std::strin
         std::string SecondWin = " draw ";
     }
     if(!multy){
-        if(stoi(l_roundFirst)+stoi(l_rounds_second) >= rounds)
+        firstWin = "";
+        if(stoi(l_rounds_second) >= rounds)
             firstWin = " end of game ";
     }
-    if((countOfBots != 0) || multy)
-    message += "score of first :" + score_first + " round : " + l_roundFirst + firstWin +'\n';
-    else
-        message += "score of first :" + score_first +'\n';
-    if(multy)
-    message += "score of second :" + score_second + " round : " + l_rounds_second + SecondWin +'\n';
+
+    if(!multy){
+        if(countOfBots ==0){
+            message += "score of first :" + score_first + " round : " + l_rounds_second + firstWin + '\n';
+        }else {
+            int roundOnePlayerBots= std::stoi(l_rounds_second)+ std::stoi(l_roundFirst);
+            message += "score of first :" + score_first + " round : " + std::to_string(roundOnePlayerBots)  + firstWin + '\n';
+            std::cout<<"one player with bots "<<'\n';
+        }
+    }
+
+    if(multy){
+        message += "score of first :" + score_first + " round : " + l_roundFirst + firstWin +'\n';
+        message += "score of second :" + score_second + " round : " + l_rounds_second + SecondWin +'\n';
+    }
     _messages.push_back(message);
     if (_messages.size() < 2) { return; }
     _messages.erase(_messages.begin());
