@@ -101,13 +101,13 @@ void Window::setState(State *st) {
 }
 
 void MainMenu::render(Window &window) {
-    window.GetRendWindow()->clear(sf::Color::Black);
+    window.GetRendWindow()->clear();
     sf::Font font;
     if (!font.loadFromFile("./Textures/retro-land-mayhem.ttf")) {
         return;
     }
-    sf::Texture button;
-    button.loadFromFile("./picture/64/button.png");
+    sf::Texture texture;
+    texture.loadFromFile("./picture/64/button.png");
 
     if (this->_isStart) {
         sf::Text rounds = makeText("Count of rounds", font,
@@ -117,21 +117,23 @@ void MainMenu::render(Window &window) {
         sf::Text user = makeText("Count of players", font,
                                  {_window->GetWindowSize().x / 4.0f, 3.0f * _window->GetWindowSize().y / 6.0f});
         _back->setFont(font);
-        _back->setBackColor(sf::Color::Blue);
+        _back->setBackColor(sf::Color::Transparent);
         _back->setTextColor(sf::Color::Yellow);
         _back->setPosition({window.GetWindowSize().x / 4.0f, 7.0f * window.GetWindowSize().y / 8.0f});
+        _back->setTexture(texture);
         _startGame->setFont(font);
-        _startGame->setBackColor(sf::Color::Blue);
+        _startGame->setTexture(texture);
+        _startGame->setBackColor(sf::Color::Transparent);
         _startGame->setTextColor(sf::Color::Yellow);
         _startGame->setPosition({3*window.GetWindowSize().x / 4.0f, 7.0f * window.GetWindowSize().y / 8.0f});
+
         if (_startGame->isMouseOver(*_window->GetRendWindow())) {
             _startGame->setBackColor(sf::Color::Red);
-            _startGame->setTextColor(sf::Color::Green);
         }
         if (_back->isMouseOver(*_window->GetRendWindow())) {
             _back->setBackColor(sf::Color::Red);
-            _back->setTextColor(sf::Color::Green);
         }
+
         _window->GetRendWindow()->draw(rounds);
         _window->GetRendWindow()->draw(bots);
         _window->GetRendWindow()->draw(user);
@@ -142,20 +144,20 @@ void MainMenu::render(Window &window) {
         _textUser->draw(*window.GetRendWindow());
         _window->GetRendWindow()->display();
     } else {
-        sf::Font font;
-        if (!font.loadFromFile("./Textures/retro-land-mayhem.ttf")) {
-            return;
-        }
         _start->setFont(font);
         _settings->setFont(font);
         _exit->setFont(font);
         _title.setFont(font);
 
-        _start->setBackColor(sf::Color::Blue);
+        _start->setTexture(texture);
+        _settings->setTexture(texture);
+        _exit->setTexture(texture);
+
+        _start->setBackColor(sf::Color::Transparent);
         _start->setTextColor(sf::Color::Yellow);
-        _settings->setBackColor(sf::Color::Blue);
+        _settings->setBackColor(sf::Color::Transparent);
         _settings->setTextColor(sf::Color::Yellow);
-        _exit->setBackColor(sf::Color::Blue);
+        _exit->setBackColor(sf::Color::Transparent);
         _exit->setTextColor(sf::Color::Yellow);
 
         _start->setPosition({_window->GetWindowSize().x / 2.0f, _window->GetWindowSize().y / 2.0f});
@@ -170,17 +172,14 @@ void MainMenu::render(Window &window) {
         this->_isSettings = _settings->isMouseOver(*this->_window->GetRendWindow());
         if (_start->isMouseOver(*this->_window->GetRendWindow())) {
             _start->setBackColor(sf::Color::Red);
-            _start->setTextColor(sf::Color::Green);
         }
         if (_isExit) {
             _exit->setBackColor(sf::Color::Red);
-            _exit->setTextColor(sf::Color::Green);
         }
         if (_isSettings) {
             _settings->setBackColor(sf::Color::Red);
-            _settings->setTextColor(sf::Color::Green);
         }
-
+        //window.GetRendWindow()->draw(sprite);
         window.GetRendWindow()->draw(_title);
         _start->drawTo(*window.GetRendWindow());
         _settings->drawTo(*window.GetRendWindow());
@@ -208,7 +207,7 @@ void MainMenu::update(Window &window) {
 
         if (this->_isExit) {
             if (e.type == sf::Event::MouseButtonPressed)
-                window.GetRendWindow()->close();
+                window.setState(new Pause(&window, this, false));
         }
 
         if (this->_start->isMouseOver(*window.GetRendWindow()) && e.type == sf::Event::MouseButtonPressed) {
@@ -253,14 +252,24 @@ void Options::render(Window &window) {
     if (!font.loadFromFile("Textures/retro-land-mayhem.ttf")) {
         return;
     }
-    _save->setFont(font);
-    _back->setFont(font);
-    sf::Text name = makeText("Input name", font, {window.GetWindowSize().x / 4.0f, window.GetWindowSize().y / 6.0f});
+    sf::Texture texture;
+    texture.loadFromFile("./picture/64/button.png");
 
-    _save->setBackColor(sf::Color::Blue);
+    _save->setFont(font);
+    _save->setTexture(texture);
+    _back->setFont(font);
+    _back->setTexture(texture);
+    sf::Text name = makeText("Input name", font, {window.GetWindowSize().x / 4.0f, window.GetWindowSize().y / 6.0f});
+    sf::Text color = makeText("Input color", font, {window.GetWindowSize().x / 4.0f, 2*window.GetWindowSize().y / 6.0f});
+
+    _save->setBackColor(sf::Color::Transparent);
     _save->setTextColor(sf::Color::Yellow);
-    _back->setBackColor(sf::Color::Blue);
+    _back->setBackColor(sf::Color::Transparent);
     _back->setTextColor(sf::Color::Yellow);
+
+    for(size_t i = 0; i < 5; ++i){
+        _color[i].setPosition({(7 + i)*window.GetWindowSize().x/12.0f, 2*window.GetWindowSize().y/6.0f});
+    }
 
     _save->setPosition({3.0f * window.GetWindowSize().x / 4.0f, 7.0f * window.GetWindowSize().y / 8.0f});
     _back->setPosition({window.GetWindowSize().x / 4.0f, 7.0f * window.GetWindowSize().y / 8.0f});
@@ -268,43 +277,35 @@ void Options::render(Window &window) {
     this->_isBack = this->_back->isMouseOver(*_window->GetRendWindow());
     if (_isSave) {
         _save->setBackColor(sf::Color::Red);
-        _save->setTextColor(sf::Color::Green);
     }
     if (_isBack) {
         _back->setBackColor(sf::Color::Red);
-        _back->setTextColor(sf::Color::Green);
     }
-    _window->GetRendWindow()->draw(name);
+
     _save->drawTo(*_window->GetRendWindow());
     _back->drawTo(*_window->GetRendWindow());
     _name->draw(*_window->GetRendWindow());
-
+    for(size_t i = 0; i < 5; ++i){
+        _window->GetRendWindow()->draw(_color[i]);
+    }
+    _window->GetRendWindow()->draw(name);
+    _window->GetRendWindow()->draw(color);
     _window->GetRendWindow()->display();
 
 }
 
 void Options::update(Window &window) {
     window.GetRendWindow()->clear();
+    sf::Color currentColor;
     //render stuff
     sf::Event e;
     while (window.GetRendWindow()->pollEvent(e)) {
         if (e.Event::type == sf::Event::Closed)
             window.GetRendWindow()->close();
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::Escape)
-            window.GetRendWindow()->close();
+            window.setState(new Pause(&window, this, false));
         if (e.Event::KeyPressed && e.Event::key.code == sf::Keyboard::F5)
             window.ToggleFullScreen();
-        if (this->_isSave) {
-            if (e.type == sf::Event::MouseButtonPressed) {
-                if(empty(this->_name->getString())){
-                    continue;
-                } else {
-                    std::cout << this->_name->getString();
-
-                }
-                window.setState(new MainMenu(&window));
-            }
-        }
         if (e.type == sf::Event::MouseButtonReleased) {
             _name->released(*window.GetRendWindow(), e);
         } else {
@@ -313,6 +314,31 @@ void Options::update(Window &window) {
         if (this->_isBack) {
             if (e.type == sf::Event::MouseButtonPressed)
                 window.setState(new MainMenu(&window));
+        }
+        for(size_t i = 0 ; i < 5; ++i) {
+            if(this->isMouseOver(*_window->GetRendWindow(), _color[i]))
+             {
+                _hasFocus = false;
+                 if(e.type == sf::Event::MouseButtonReleased) {
+                    _hasFocus = true;
+                    currentColor = _color[i].getFillColor();
+                }
+                _color[i].setOutlineColor(sf::Color::Cyan);
+                if(!_hasFocus) {
+                    _color[i].setOutlineColor(sf::Color(127, 127, 127));
+                }
+            }
+        }
+        if (this->_isSave) {
+            if (e.type == sf::Event::MouseButtonPressed) {
+                window.setState(new MainMenu(&window));
+                if(empty(this->_name->getString())){
+                    continue;
+                } else {
+                    std::cout << this->_name->getString();
+                    std::cout << currentColor.toInteger();
+                }
+            }
         }
     }
 }
@@ -329,7 +355,7 @@ Game::Game() {
 }
 
 void Pause::render(Window &window) {
-    window.GetRendWindow()->clear(sf::Color::Green);
+    window.GetRendWindow()->clear(sf::Color::Transparent);
     sf::Font font;
     if (!font.loadFromFile("Textures/retro-land-mayhem.ttf")) {
         return;
@@ -338,39 +364,40 @@ void Pause::render(Window &window) {
     _title.setFont(font);
     sf::FloatRect titleRect = _title.getLocalBounds();
     _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
-    _title.setPosition(_window->GetWindowSize().x/2.0f, _window->GetWindowSize().y/3.0f);
+    _title.setPosition(_window->GetWindowSize().x/2.0f, _window->GetWindowSize().y/4.0f);
 
     json config = _window->getConfig();
-    sf::Vector2f size(config["button_width"], config["button_height"]);
+    sf::Texture texture;
+    texture.loadFromFile("./picture/64/button.png");
 
     if(_isPause){
         _title.setString("Pause");
         _return->setFont(font);
+        _return->setTexture(texture);
         _restart->setFont(font);
+        _restart->setTexture(texture);
         _continue->setFont(font);
+        _continue->setTexture(texture);
 
-        _return->setBackColor(sf::Color::Blue);
+        _return->setBackColor(sf::Color::Transparent);
         _return->setTextColor(sf::Color::Yellow);
-        _restart->setBackColor(sf::Color::Blue);
+        _restart->setBackColor(sf::Color::Transparent);
         _restart->setTextColor(sf::Color::Yellow);
-        _continue->setBackColor(sf::Color::Blue);
+        _continue->setBackColor(sf::Color::Transparent);
         _continue->setTextColor(sf::Color::Yellow);
-        _return->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f  -10+ 2*size.y*0.9f});
-        _restart->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f -5 +size.y*0.9f});
-        _continue->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f});
+        _return->setPosition({_window->GetWindowSize().x/2.0f, 2.5f*_window->GetWindowSize().y/6.0f + 2*_restart->getSize().y });
+        _restart->setPosition({_window->GetWindowSize().x/2.0f, 2.5f*_window->GetWindowSize().y/6.0f + _continue->getSize().y });
+        _continue->setPosition({_window->GetWindowSize().x/2.0f, 2.5f*_window->GetWindowSize().y/6.0f});
 
         if(this->_continue->isMouseOver(*_window->GetRendWindow())){
             _continue->setBackColor(sf::Color::Red);
-            _continue->setTextColor(sf::Color::Green);
         }
 
         if(this->_return->isMouseOver(*_window->GetRendWindow())){
             _return->setBackColor(sf::Color::Red);
-            _return->setTextColor(sf::Color::Green);
         }
         if(this->_restart->isMouseOver(*_window->GetRendWindow())) {
             _restart->setBackColor(sf::Color::Red);
-            _restart->setTextColor(sf::Color::Green);
         }
         _return->drawTo(*_window->GetRendWindow());
         _restart->drawTo(*_window->GetRendWindow());
@@ -378,20 +405,20 @@ void Pause::render(Window &window) {
     } else {
         _title.setString("Do you want to quit the game?");
         _exit->setFont(font);
+        _exit->setTexture(texture);
         _back->setFont(font);
-        _back->setBackColor(sf::Color::Blue);
+        _back->setTexture(texture);
+        _back->setBackColor(sf::Color::Transparent);
         _back->setTextColor(sf::Color::Yellow);
         _back->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f});
-        _exit->setBackColor(sf::Color::Blue);
+        _exit->setBackColor(sf::Color::Transparent);
         _exit->setTextColor(sf::Color::Yellow);
-        _exit->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f -5 + size.y*0.9f});
+        _exit->setPosition({_window->GetWindowSize().x/2.0f, 3*_window->GetWindowSize().y/6.0f + _back->getSize().y});
         if(this->_exit->isMouseOver(*_window->GetRendWindow())){
             _exit->setBackColor(sf::Color::Red);
-            _exit->setTextColor(sf::Color::Green);
         }
         if(this->_back->isMouseOver(*_window->GetRendWindow())){
             _back->setBackColor(sf::Color::Red);
-            _back->setTextColor(sf::Color::Green);
         }
         _exit->drawTo(*_window->GetRendWindow());
         _back->drawTo(*_window->GetRendWindow());
@@ -653,7 +680,7 @@ Snake::Snake(int l_blockSize, bool is_multy) {
         return;
     }
     _size = l_blockSize;
-    _bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
+    //_bodyRect.setSize(sf::Vector2f(_size - 1, _size - 1));
     Reset(is_multy);
 }
 
@@ -807,12 +834,19 @@ void Snake::CheckCollision(std::vector<sf::Vector2i> items) {
 void Snake::Render(sf::RenderWindow &l_window) {
     if (_snakeBody.empty()) { return; }
 
+    sf::Texture body;
+    body.loadFromFile("./picture/body.png");
+
+    sf::Texture header;
+    header.loadFromFile("./picture/head.png");
+
     auto head = _snakeBody.begin();
-    _bodyRect.setFillColor(sf::Color::Yellow);
+    _bodyRect.setTexture(header);
     _bodyRect.setPosition(head->position.x * _size, head->position.y * _size);
     l_window.draw(_bodyRect);
 
-    _bodyRect.setFillColor(sf::Color::Green);
+
+    _bodyRect.setTexture(body);
     for (auto itr = _snakeBody.begin() + 1; itr != _snakeBody.end(); ++itr) {
         _bodyRect.setPosition(itr->position.x * _size, itr->position.y * _size);
         l_window.draw(_bodyRect);
@@ -1181,8 +1215,6 @@ World::World(const sf::Vector2u &l_windSize) {
     _windowSize.y = l_windSize.y - 50;
     _windowSize.x = l_windSize.x;
     RespawnApple();
-    _appleShape.setFillColor(sf::Color::Red);
-    _appleShape.setRadius(_blockSize / 2);
     //_______________________
     std::vector<sf::Vector2i> stonesPos;
     std::vector<sf::RectangleShape> stones;
@@ -1300,6 +1332,10 @@ World::Update(Snake &l_player, Snake &l_second_player, std::vector<SnakeBot> &bo
 }
 
 void World::Render(sf::RenderWindow &window) {
+    sf::Texture texture;
+    texture.loadFromFile("./picture/64/food.png");
+    _appleShape.setTexture(texture);
+    _appleShape.setScale(0.5,0.5);
     window.draw(_appleShape);
     for (auto i = _stoneShape.begin(); i != _stoneShape.end(); ++i) {
         window.draw(*i);
