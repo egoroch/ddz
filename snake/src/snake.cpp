@@ -436,10 +436,10 @@ Game::Game(Window *window, int countOfBots, int rounds, bool is_multiplay) {
     std::vector<sf::Vector2i> res;
     std::vector<sf::Vector2i> fromWorld = _world.get_world_items();
     std::vector<sf::Vector2i> fromSnake = _snake.getBodySnake();
-    for (auto itr = fromWorld.begin(); itr < fromWorld.end(); ++itr) {
+    for (auto itr = fromWorld.begin(); itr != fromWorld.end(); ++itr) {
         res.push_back(*itr);
     }
-    for (auto itr = fromSnake.begin(); itr < fromSnake.end(); ++itr) {
+    for (auto itr = fromSnake.begin(); itr != fromSnake.end(); ++itr) {
         res.push_back(*itr);
     }
     _is_multiplayer = is_multiplay;
@@ -451,7 +451,7 @@ Game::Game(Window *window, int countOfBots, int rounds, bool is_multiplay) {
         }
     }else _player2_snake =Snake(0,true);
 
-    _text.Setup(1, 30, _window->GetWindowSize().x, sf::Vector2f(0, _window->GetWindowSize().y - 50));
+    _text.Setup(2, 14, _window->GetWindowSize().x, sf::Vector2f(0, _window->GetWindowSize().y - 70));
     this->CreateAllBots(window,_world.GetBlockSize(),res,countOfBots);
 
 }
@@ -462,7 +462,7 @@ std::vector<sf::Vector2i> Game::get_game_items() {
     std::vector<sf::Vector2i> fromWorld = _world.get_world_items();
     std::vector<sf::Vector2i> fromSnake = _snake.getBodySnake();
 
-    //   sizeof(arr)/sizeof(arr[0]);
+    //   sizeof(arr)/sizeof(arr[0]);c
     for (auto itr = fromWorld.begin(); itr < fromWorld.end(); ++itr) {
         res.push_back(*itr);
     }
@@ -499,7 +499,14 @@ void Game::render(Window &window) {
         _player2_snake.Render(*_window->GetRendWindow());
     for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
         itr->Render(*_window->GetRendWindow());
-    _text.Add(std::to_string(_firstRounds));
+
+    bool isWinFirst = false;
+    bool isWinSecond = false;
+    if(_firstRounds > (_rounds/2))
+            isWinFirst=true;
+    if(_secondRounds > (_rounds/2))
+        isWinSecond =true;
+    _text.Add(_is_multiplayer,std::to_string(_firstRounds),std::to_string(_secondRounds),std::to_string(_snake.GetScore()),std::to_string(_player2_snake.GetScore()), isWinFirst , isWinSecond,_rounds);
     _text.Render(*_window->GetRendWindow());
     _window->GetRendWindow()->display();
     this->RestartClock();
@@ -583,7 +590,6 @@ void Game::update(Window &window) {
                 if (_snake.HasLost() || _player2_snake.HasLost()) {
                     if (_snake.HasLost()) _secondRounds++;
                     if (_player2_snake.HasLost()) _firstRounds++;
-
                     _snake.Reset(false);
                     _player2_snake.Reset(true);
 
@@ -597,36 +603,48 @@ void Game::update(Window &window) {
 
                 }
             } else {
+
                 if (_snake.HasLost()) {
                     _snake.Reset(false);
                 }
-
+            int deadSnakes =0;
             for (auto itr = _bots.begin(); itr != _bots.end(); ++itr)
                 if (itr->HasLost()) {
                     itr->Disappear();
+                    deadSnakes++;
                 }
+            if(deadSnakes == _countOfBots)
+                _firstRounds++;
+            if (_snake.HasLost()) _secondRounds++;
+            if (_player2_snake.HasLost()) _firstRounds++;
         }
     }
     this->RestartClock();
 };
 
 void Game::CreateAllBots(Window *window, int blockSIze, std::vector<sf::Vector2i> items, int count) {
-    _bots.clear();
+        if(count)
+            _bots.clear();
     std::vector<SnakeBot> res;
+    std::cout << "inside createallbots"<< '\n';
     int maxX = (window->GetWindowSize().x / blockSIze);
     int maxY = (window->GetWindowSize().y / blockSIze);
     sf::Vector2i head;
     if(count == 0){
-        head = sf::Vector2i (-2,-2);
-        res.push_back(SnakeBot(blockSIze, head));
+        //head = sf::Vector2i (-2,-2);
+        //res.push_back(SnakeBot(0, head));
+        _bots = res;
+        std::cout << " end inside createallbots"<< '\n';
         return ;
     }
+
+
     //head = sf::Vector2i(rand() % maxX, rand() % (maxY-3));
 
     for (int i = 0; i < count; ++i) {
         int Check = -1;
         while (Check != 0) {
-            Check = 0; //check++
+            Check = 0;
             head = sf::Vector2i(rand() % maxX, (rand() % (maxY - 3)) + 3);
 
             for (auto itr = items.begin(); itr != items.end(); ++itr) {
@@ -643,6 +661,7 @@ void Game::CreateAllBots(Window *window, int blockSIze, std::vector<sf::Vector2i
         res.push_back(SnakeBot(blockSIze, head));
     }
     _bots = res;
+
     return;
 }
 
@@ -1221,6 +1240,11 @@ void World::RespawnApple() {
     srand(unsigned(time(0)));
     _item = sf::Vector2i(
             rand() % maxX, rand() % maxY);
+    for(auto itr = _stonesPos.begin();itr != _stonesPos.end();++itr)
+    {
+        if(*itr == _item)
+            RespawnApple();
+    }
     _appleShape.setPosition(
             _item.x * _blockSize,
             _item.y * _blockSize);
@@ -1338,9 +1362,29 @@ void Textbox::Setup(int l_visible, int l_charSize, int l_width, sf::Vector2f l_s
     _backdrop.setPosition(l_screenPos);
 }
 
-void Textbox::Add(std::string l_message) {
-    l_message = "score: " + l_message;
-    _messages.push_back(l_message);
+void Textbox::Add(bool multy,std::string l_roundFirst,std::string l_rounds_second,std::string score_first,std::string score_second,bool win1 ,bool win2, int rounds) {
+    std::string message ="";
+    std::string firstWin = "";
+    std::string SecondWin = "";
+    if(win1) {
+        firstWin = " First Win !!! ";
+    }
+    if(win2) {
+        SecondWin = " Second Win !!! ";
+    }
+
+    if(win1 && win2) {
+        std::string firstWin = " draw ";
+        std::string SecondWin = " draw ";
+    }
+    if(!multy){
+        if(stoi(l_roundFirst)+stoi(l_rounds_second) >= rounds)
+            firstWin = " end of game ";
+    }
+    message += "score of first :" + score_first + " round : " + l_roundFirst + firstWin +'\n';
+    if(multy)
+    message += "score of second :" + score_second + " round : " + l_rounds_second + SecondWin +'\n';
+    _messages.push_back(message);
     if (_messages.size() < 2) { return; }
     _messages.erase(_messages.begin());
 }
