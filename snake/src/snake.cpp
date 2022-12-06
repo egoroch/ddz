@@ -531,16 +531,82 @@ void Game::render(Window &window) {
 
     bool isWinFirst = false;
     bool isWinSecond = false;
-    if(_firstRounds > (_rounds/2))
-            isWinFirst=true;
-    if(_secondRounds > (_rounds/2))
-        isWinSecond =true;
+    if(_firstRounds > (_rounds/2)) {
+        isWinFirst = true;
+        window.setState(new WindowWin(&window, this, true));
+    }
+    if(_secondRounds > (_rounds/2)) {
+        isWinSecond = true;
+        window.setState(new WindowWin(&window, this, false));
+    }
     _text.Add(_is_multiplayer,_countOfBots,std::to_string(_firstRounds),std::to_string(_secondRounds),std::to_string(_snake.GetScore()),std::to_string(_player2_snake.GetScore()), isWinFirst , isWinSecond,_rounds);
     _text.Render(*_window->GetRendWindow());
     _window->GetRendWindow()->display();
     this->RestartClock();
     // _player->move();t
     //_player->render(*(_window->GetRendWindow()));
+}
+
+void WindowWin::render(Window &window) {
+    window.GetRendWindow()->clear(sf::Color::Transparent);
+    sf::Font font;
+    if (!font.loadFromFile("Textures/retro-land-mayhem.ttf")) {
+        return;
+    }
+
+    _title.setFont(font);
+    sf::FloatRect titleRect = _title.getLocalBounds();
+    _title.setOrigin({titleRect.left + titleRect.width / 2.0f, titleRect.top + titleRect.height / 2.0f});
+    _title.setPosition(_window->GetWindowSize().x/2.0f, _window->GetWindowSize().y/4.0f);
+
+    json config = _window->getConfig();
+    sf::Texture texture;
+    texture.loadFromFile("./picture/64/button.png");
+    if(_isFirst) {
+        _title.setString("First Win!");
+    } else if(_previous->IsMulty()) {
+        _title.setString("Second Win!");
+    } else {
+        _title.setString("End of the game!");
+    }
+        _return->setFont(font);
+        _return->setTexture(texture);
+        _restart->setFont(font);
+        _restart->setTexture(texture);
+
+
+        _return->setBackColor(sf::Color::Transparent);
+        _return->setTextColor(sf::Color::Yellow);
+        _restart->setBackColor(sf::Color::Transparent);
+        _restart->setTextColor(sf::Color::Yellow);
+        _return->setPosition({_window->GetWindowSize().x/2.0f, 2.5f*_window->GetWindowSize().y/6.0f + _restart->getSize().y });
+        _restart->setPosition({_window->GetWindowSize().x/2.0f, 2.5f*_window->GetWindowSize().y/6.0f});
+
+
+        if(this->_return->isMouseOver(*_window->GetRendWindow())){
+            _return->setBackColor(sf::Color::Red);
+        }
+        if(this->_restart->isMouseOver(*_window->GetRendWindow())) {
+            _restart->setBackColor(sf::Color::Red);
+        }
+        _return->drawTo(*_window->GetRendWindow());
+        _restart->drawTo(*_window->GetRendWindow());
+        window.GetRendWindow()->draw(_title);
+        window.GetRendWindow()->display();
+
+}
+
+void WindowWin::update(Window &window) {
+    window.GetRendWindow()->clear();
+    sf::Event event;
+    while (window.GetRendWindow()->pollEvent(event)) {
+        if (event.Event::type == sf::Event::Closed)
+            window.GetRendWindow()->close();
+        if (this->_return->isMouseOver(*_window->GetRendWindow()) && event.type == sf::Event::MouseButtonPressed)
+            _window->setState(new MainMenu(_window));
+        if (this->_restart->isMouseOver(*_window->GetRendWindow()) && event.type == sf::Event::MouseButtonPressed)
+            _window->setState(new Game(&window, _previous->GetBot(), _previous->GetRounds(), _previous->IsMulty()));
+    };
 }
 
 void Game::update(Window &window) {

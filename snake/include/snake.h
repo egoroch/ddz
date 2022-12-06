@@ -244,6 +244,17 @@ private:
 public:
     Game();
 
+    bool IsMulty(){
+        return _is_multiplayer;
+    }
+
+    int GetRounds(){
+        return _rounds;
+    }
+
+    int GetBot(){
+        return _countOfBots;
+    }
     void CreateAllBots(Window *window,int blockSIze , std::vector<sf::Vector2i> items,int count);
     explicit Game(Window *window , int count,int rounds ,bool is_multiplayer);
     sf::Time GetElapsed();
@@ -594,6 +605,45 @@ private:
     Button* _exit;
 
     bool _isPause;
+};
+
+class WindowWin: public State{
+public:
+    WindowWin(Window* window, Game* previous, bool first){
+        window->setIsPause(true) ;
+        _isFirst  = first;
+        _window = window;
+        _previous = previous;
+        json config = _window->getConfig();
+        sf::Vector2f scale(config["pause_width"], config["pause_height"]);
+
+        int charSize = config["character_size"];
+
+        _return = new Button("Return",scale,  charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+        _restart = new Button("Restart", scale,  charSize - 4,sf::Color::Blue, sf::Color::Yellow);
+
+        _title.setCharacterSize(charSize + 5);
+        _title.setFillColor(sf::Color::White);
+
+    }
+
+    void render(Window& window) override;
+
+    void update(Window& window) override;
+
+    ~WindowWin(){
+        delete _previous;
+    }
+
+private:
+    Window* _window;
+    Game* _previous;
+    sf::Text _title;
+
+    Button* _return;
+    Button* _restart;
+
+    bool _isFirst;
 };
 
 
